@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BookNest - Staff Portal</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="staff.css">
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="header-title">
+      <a href="index.html">
+        <div class="logo-icon">📚</div>
+        <strong>BookNest</strong>
+      </a>
+    </div>
+    <nav class="nav-buttons">
+      <a href="login.html" class="nav-button">Login</a>
+      <a href="register.html" class="nav-button">Register</a>
+    </nav>
+  </div>
+  <div class="header-right">
+     <div class="staff-portal"
+        onclick="window.location.href='admin.html'"
+        style="cursor: pointer;">
+        <div class="staff-section">
+          <div class="staff-avatar">⚙️</div>
+          <span class="staff-label">Admin Panel</span>
+        </div>
+      </div>
+    <div class="staff-portal" onclick="window.location.href='staff.html'" style="cursor: pointer;">
+      <div class="staff-section">
+        <div class="staff-avatar">🛠️</div>
+        <span class="staff-label">Staff Portal</span>
+      </div>
+    </div>
+    <div class="profile-currency" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+      <div class="profile-section">
+        <div class="profile-avatar">👤</div>
+        <span class="profile-name">emn</span>
+      </div>
+      <div class="currency-section">
+        <span class="currency-symbol">₱</span>
+        <span class="currency-amount">890.70</span>
+      </div>
+    </div>
+    <button class="cart-button" onclick="window.location.href='cart.html'">
+      🛒 Cart (<span id="cartCount">0</span>)
+    </button>
+  </div>
+</header>
+
+<div class="staff-container">
+  <!-- Staff Header -->
+  <div class="staff-header">
+    <div class="staff-title">
+      <div class="staff-icon">🛡️</div>
+      <h1>Staff Dashboard</h1>
+    </div>
+    <div class="staff-user">
+      <span class="staff-name">Sarah Johnson</span>
+      <span class="staff-role">Manager</span>
+    </div>
+  </div>
+
+  <!-- Dashboard Stats -->
+  <div class="dashboard-stats">
+    <div class="stat-card revenue">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <div class="stat-value">$5393.32</div>
+        <div class="stat-label">Total Revenue</div>
+      </div>
+    </div>
+    
+    <div class="stat-card transactions">
+      <div class="stat-icon">📊</div>
+      <div class="stat-content">
+        <div class="stat-value">268</div>
+        <div class="stat-label">Total Transactions</div>
+      </div>
+    </div>
+    
+    <div class="stat-card catalog">
+      <div class="stat-icon">📚</div>
+      <div class="stat-content">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Books in Catalog</div>
+      </div>
+    </div>
+    
+    <div class="stat-card alerts">
+      <div class="stat-icon">⚠️</div>
+      <div class="stat-content">
+        <div class="stat-value">2</div>
+        <div class="stat-label">Low Stock Alerts</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons -->
+  <div class="action-buttons">
+    <button class="action-btn" id="transactionLogBtn">
+      <div class="btn-icon">📋</div>
+      <span>Transaction Log</span>
+    </button>
+    
+    <button class="action-btn" id="bookManagementBtn">
+      <div class="btn-icon">📖</div>
+      <span>Book Management</span>
+    </button>
+    
+    <button class="action-btn" id="analyticsBtn">
+      <div class="btn-icon">📈</div>
+      <span>Analytics</span>
+    </button>
+  </div>
+
+  <!-- Transaction Log Section -->
+  <div class="content-section" id="transactionSection">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon">📋</div>
+        <h2>Transaction Log</h2>
+      </div>
+      <div class="section-actions">
+        <button class="export-btn">
+          <span>📤</span>
+          Export
+        </button>
+        <button class="refresh-btn">
+          <span>🔄</span>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="filters">
+      <div class="search-wrapper">
+        <input type="text" placeholder="Search transactions..." class="search-input">
+      </div>
+      <select class="filter-select">
+        <option value="all">All Transactions</option>
+        <option value="purchase">Purchases</option>
+        <option value="refund">Refunds</option>
+        <option value="exchange">Exchanges</option>
+      </select>
+    </div>
+
+    <div class="transaction-list">
+      <div class="transaction-item">
+        <div class="transaction-icon purchase">🛒</div>
+        <div class="transaction-details">
+          <div class="transaction-title">Order ORD-12345678 - 3 books</div>
+          <div class="transaction-meta">
+            <span class="transaction-user">User: John Doe</span>
+            <span class="transaction-id">ID: txn_001</span>
+            <span class="transaction-date">1/10/2024, 6:30:00 PM</span>
+          </div>
+        </div>
+        <div class="transaction-amount positive">+$62.97 USD</div>
+        <div class="transaction-status completed">completed</div>
+      </div>
+
+      <div class="transaction-item">
+        <div class="transaction-icon wallet">💳</div>
+        <div class="transaction-details">
+          <div class="transaction-title">Wallet loaded with $100</div>
+          <div class="transaction-meta">
+            <span class="transaction-user">User: Jane Smith</span>
+            <span class="transaction-id">ID: txn_002</span>
+            <span class="transaction-date">1/9/2024, 10:20:00 PM</span>
+          </div>
+        </div>
+        <div class="transaction-amount positive">+$100.00 USD</div>
+        <div class="transaction-status completed">completed</div>
+      </div>
+
+      <div class="transaction-item">
+        <div class="transaction-icon exchange">🔄</div>
+        <div class="transaction-details">
+          <div class="transaction-title">Exchanged $100 USD to €85 EUR</div>
+          <div class="transaction-meta">
+            <span class="transaction-user">User: John Doe</span>
+            <span class="transaction-id">ID: txn_003</span>
+            <span class="transaction-date">1/8/2024, 5:15:00 PM</span>
+          </div>
+        </div>
+        <div class="transaction-amount positive">+€85.00 EUR</div>
+        <div class="transaction-status completed">completed</div>
+      </div>
+
+      <div class="transaction-item">
+        <div class="transaction-icon purchase">🛒</div>
+        <div class="transaction-details">
+          <div class="transaction-title">Order ORD-87654321 - 1 book</div>
+          <div class="transaction-meta">
+            <span class="transaction-user">User: Mike Wilson</span>
+            <span class="transaction-id">ID: txn_004</span>
+            <span class="transaction-date">1/8/2024, 12:45:00 AM</span>
+          </div>
+        </div>
+        <div class="transaction-amount positive">+$24.99 USD</div>
+        <div class="transaction-status completed">completed</div>
+      </div>
+
+      <div class="transaction-item">
+        <div class="transaction-icon refund">↩️</div>
+        <div class="transaction-details">
+          <div class="transaction-title">Refund for Order ORD-1111111</div>
+          <div class="transaction-meta">
+            <span class="transaction-user">User: Jane Smith</span>
+            <span class="transaction-id">ID: txn_005</span>
+            <span class="transaction-date">1/6/2024, 7:30:00 PM</span>
+          </div>
+        </div>
+        <div class="transaction-amount negative">-$18.99 USD</div>
+        <div class="transaction-status completed">completed</div>
+      </div>
+    </div>
+  </div>
+
+ <!-- Book Management Section -->
+  <div class="content-section hidden" id="bookSection">
+    <div class="inventory-header">
+      <div class="inventory-title">
+        <span class="inventory-icon">📖</span>
+        <h2>Book Inventory Management</h2>
+      </div>
+      <button class="add-new-book-btn">
+        <span>➕</span>
+        Add New Book
+      </button>
+    </div>
+
+    <div class="inventory-search-bar">
+      <input type="text" placeholder="Search books..." class="inventory-search-input">
+    </div>
+
+    <div class="inventory-list">
+      <div class="inventory-item">
+        <div class="item-image">
+          <div class="book-cover">📕</div>
+        </div>
+        <div class="item-details">
+          <h3 class="item-title">The Midnight Library</h3>
+          <p class="item-author">by Matt Haig</p>
+          <span class="item-genre">Fiction</span>
+        </div>
+        <div class="item-price-section">
+          <span class="item-label">Price</span>
+          <span class="item-price">$24.99</span>
+        </div>
+        <div class="item-stock-section">
+          <span class="item-label">Stock</span>
+          <span class="item-stock">45</span>
+        </div>
+        <div class="item-sold-section">
+          <span class="item-label">Sold</span>
+          <span class="item-sold">45</span>
+        </div>
+        <div class="item-revenue-section">
+          <span class="item-label">Revenue</span>
+          <span class="item-revenue">$1124.55</span>
+        </div>
+        <div class="item-actions">
+          <div class="stock-controls">
+            <button class="stock-btn minus">−</button>
+            <span class="stock-adjust-label">Adjust Stock</span>
+            <button class="stock-btn plus">+</button>
+          </div>
+          <div class="action-controls">
+            <input type="number" class="stock-qty-input" placeholder="Qty" min="1">
+            
+          </div>
+        </div>
+        <div class="item-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button class="item-edit-btn">✏️</button>
+      </div>
+
+      <div class="inventory-item">
+        <div class="item-image">
+          <div class="book-cover">📗</div>
+        </div>
+        <div class="item-details">
+          <h3 class="item-title">Atomic Habits</h3>
+          <p class="item-author">by James Clear</p>
+          <span class="item-genre">Self-Help</span>
+        </div>
+        <div class="item-price-section">
+          <span class="item-label">Price</span>
+          <span class="item-price">$18.99</span>
+        </div>
+        <div class="item-stock-section">
+          <span class="item-label">Stock</span>
+          <span class="item-stock low-stock">8</span>
+        </div>
+        <div class="item-sold-section">
+          <span class="item-label">Sold</span>
+          <span class="item-sold">67</span>
+        </div>
+        <div class="item-revenue-section">
+          <span class="item-label">Revenue</span>
+          <span class="item-revenue">$1272.33</span>
+        </div>
+        <div class="item-actions">
+          <div class="stock-controls">
+            <button class="stock-btn minus">−</button>
+            <span class="stock-adjust-label">Adjust Stock</span>
+            <button class="stock-btn plus">+</button>
+          </div>
+          <div class="action-controls">
+            <input type="number" class="stock-qty-input" placeholder="Qty" min="1">
+          
+          </div>
+        </div>
+        <div class="item-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button class="item-edit-btn">✏️</button>
+      </div>
+
+      <div class="inventory-item">
+        <div class="item-image">
+          <div class="book-cover">📘</div>
+        </div>
+        <div class="item-details">
+          <h3 class="item-title">The Seven Husbands of Evelyn Hugo</h3>
+          <p class="item-author">by Taylor Jenkins Reid</p>
+          <span class="item-genre">Romance</span>
+        </div>
+        <div class="item-price-section">
+          <span class="item-label">Price</span>
+          <span class="item-price">$16.99</span>
+        </div>
+        <div class="item-stock-section">
+          <span class="item-label">Stock</span>
+          <span class="item-stock">32</span>
+        </div>
+        <div class="item-sold-section">
+          <span class="item-label">Sold</span>
+          <span class="item-sold">32</span>
+        </div>
+        <div class="item-revenue-section">
+          <span class="item-label">Revenue</span>
+          <span class="item-revenue">$543.68</span>
+        </div>
+        <div class="item-actions">
+          <div class="stock-controls">
+            <button class="stock-btn minus">−</button>
+            <span class="stock-adjust-label">Adjust Stock</span>
+            <button class="stock-btn plus">+</button>
+          </div>
+          <div class="action-controls">
+            <input type="number" class="stock-qty-input" placeholder="Qty" min="1">
+          
+          </div>
+        </div>
+        <div class="item-toggle">
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <button class="item-edit-btn">✏️</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Analytics Section -->
+   <!-- Analytics Section -->
+  <div class="content-section hidden" id="analyticsSection">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon">📈</div>
+        <h2>Analytics</h2>
+      </div>
+    </div>
+
+    <div class="analytics-grid two-column">
+      <!-- Top Selling Books -->
+      <div class="analytics-card top-selling">
+        <h3>Top Selling Books</h3>
+        <div class="top-selling-list">
+          <div class="top-book-item">
+            <span class="rank">#1</span>
+            <span class="book-name">Atomic Habits</span>
+            <span class="sales">67 copies sold</span>
+          </div>
+          <div class="top-book-item">
+            <span class="rank">#2</span>
+            <span class="book-name">Where the Crawdads Sing</span>
+            <span class="sales">55 copies sold</span>
+          </div>
+          <div class="top-book-item">
+            <span class="rank">#3</span>
+            <span class="book-name">The Midnight Library</span>
+            <span class="sales">45 copies sold</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Low Stock Alerts -->
+      <div class="analytics-card low-stock-alerts">
+        <h3>Low Stock Alerts</h3>
+        <div class="low-stock-list">
+          <div class="alert-item">
+            <div>
+              <span class="book-title">Dune</span>
+              <span class="book-author">by Frank Herbert</span>
+            </div>
+            <span class="remaining">3 left</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Edit Book Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Edit Book</h3>
+        <button class="modal-close" id="modalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="modalTitle">Title</label>
+        <input type="text" id="modalTitle">
+
+        <label for="modalAuthor">Author</label>
+        <input type="text" id="modalAuthor">
+
+        <label for="modalGenre">Genre</label>
+        <select id="modalGenre">
+          <option>Fiction</option>
+          <option>Self-Help</option>
+          <option>Romance</option>
+          <!-- add more as needed -->
+        </select>
+
+        <label for="modalPrice">Price</label>
+        <input type="number" id="modalPrice" step="0.01">
+
+        <label for="modalOriginalPrice">Original Price</label>
+        <input type="number" id="modalOriginalPrice" step="0.01">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel" id="modalCancelBtn">Cancel</button>
+        <button class="modal-save" id="modalSaveBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+  <!-- Add New Book Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Add New Book</h3>
+        <button class="modal-close" id="addModalCloseBtn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="addTitle">Title *</label>
+        <input type="text" id="addTitle" required>
+
+        <label for="addAuthor">Author *</label>
+        <input type="text" id="addAuthor" required>
+
+        <label for="addGenre">Genre</label>
+        <select id="addGenre">
+          <option value="" disabled selected>Select genre</option>
+          <option>Fiction</option>
+          <option>Self-Help</option>
+          <option>Romance</option>
+          <!-- etc. -->
+        </select>
+
+        <label for="addPrice">Price *</label>
+        <input type="number" id="addPrice" step="0.01" required>
+
+        <label for="addOriginalPrice">Original Price</label>
+        <input type="number" id="addOriginalPrice" step="0.01">
+
+        <label for="addStock">Initial Stock</label>
+        <input type="number" id="addStock" min="0">
+      </div>
+      <div class="modal-footer">
+        <button class="modal-cancel" id="addModalCancelBtn">Cancel</button>
+        <button class="modal-save" id="addModalSaveBtn">Add Book</button>
+      </div>
+    </div>
+  </div>
+
+<script src="staff.js"></script>
+
+</body>
+</html>
