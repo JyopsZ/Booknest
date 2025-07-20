@@ -146,10 +146,10 @@ FOREIGN KEY (user_id)
 
 
 -- -----------------------------------------------------
--- Table Stock_Change_Log
+-- Table Product_Change_Log
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS Stock_Change_Log (
-  stock_log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS Product_Change_Log (
+  product_log_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
   field_changed VARCHAR(50) NOT NULL,
   old_value TEXT NOT NULL,
@@ -179,13 +179,16 @@ FOREIGN KEY (currency_id)
 CREATE TABLE IF NOT EXISTS Product_Archive (
   product_archive_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   product_id INT NOT NULL,
-  name VARCHAR(255) NOT NULL,
-  genre VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
   author VARCHAR(100) NOT NULL,
-  description TEXT NOT NULL,
   price DECIMAL(10,2) NOT NULL,
+  genre VARCHAR(50) NOT NULL,
   stock_quantity INT NOT NULL,
-  currency_id INT NOT NULL,
-FOREIGN KEY (product_id)
-    REFERENCES Products (product_id)
+  rating DECIMAL(2,1) NOT NULL,
+  description TEXT NOT NULL,
+  isBestseller TINYINT(1) NOT NULL,
+  isNew TINYINT(1) NOT NULL,
+  status ENUM('In-stock', 'Out-of-stock') NOT NULL,
+  created_at TIMESTAMP NOT NULL,
+  currency_id INT NOT NULL
 );
