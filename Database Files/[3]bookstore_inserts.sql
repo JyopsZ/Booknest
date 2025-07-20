@@ -50,8 +50,3 @@ INSERT INTO User_Balance_Load (balance_id, amount_loaded)
 VALUES 	(1, 599.00),
 		(2, 12.54),
         (1, 1200.00);
-
-SELECT *FROM Orders;
-SELECT *FROM Products;
-SELECT *FROM User_Balance;
-SELECT *FROM User_Balance_Load;
