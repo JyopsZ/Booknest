@@ -147,11 +147,23 @@ CREATE TABLE IF NOT EXISTS User_Balance (
   balance_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
   currency_id INT NOT NULL,
-  balance DECIMAL(10,2) NOT NULL,
+  balance DECIMAL(10,2) DEFAULT 0.00,
 FOREIGN KEY (user_id)
     REFERENCES Users (user_id),
 FOREIGN KEY (currency_id)
     REFERENCES Currencies (currency_id)
+);
+
+-- -----------------------------------------------------
+-- Table User_Balance_Load
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS User_Balance_Load (
+	balance_load_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    balance_id INT NOT NULL,
+    amount_loaded DECIMAL(10,2),
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+FOREIGN KEY (balance_id)
+	REFERENCES User_Balance (balance_id)
 );
 
 
@@ -171,6 +183,3 @@ CREATE TABLE IF NOT EXISTS Product_Archive (
 FOREIGN KEY (product_id)
     REFERENCES Products (product_id)
 );
-
-SELECT *FROM Products;
-SELECT *FROM Orders;
