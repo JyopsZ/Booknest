@@ -140,6 +140,28 @@ app.get('/api/admin/users', (req, res) => {
   });
 });
 
+// Route to add a new user
+app.post('/api/admin/users', (req, res) => {
+  const { display_name, email, phone_num, password, role } = req.body;
+
+  // Validate required fields
+  if (!display_name || !email || !phone_num || !password || !role) {
+    return res.status(400).json({ error: 'All fields are required' });
+  }
+
+  // Call the stored procedure to add the user
+  const query = 'CALL AddUser(?, ?, ?, ?, ?)';
+
+  db.query(query, [display_name, email, phone_num, password, role], (err, results) => {
+    if (err) {
+      console.error('Error adding user:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json({ message: 'User added successfully' });
+  });
+});
+
 // Admin Delete User
 app.delete('/api/admin/users/:userId', (req, res) => {
   const { userId } = req.params;  // Get the userId from the URL parameter
@@ -157,4 +179,60 @@ app.delete('/api/admin/users/:userId', (req, res) => {
   });
 });
 
+// Route to get all currencies with optional search and filter
+app.get('/api/admin/currencies', (req, res) => {
+  const { searchTerm = '', roleFilter = 'all' } = req.query;  // Default to 'all' if no filter is provided
+  
+  const query = 'CALL GetFilteredCurrencies(?, ?)';  // Call the stored procedure to filter currencies
 
+  db.query(query, [searchTerm, roleFilter], (err, results) => {
+    if (err) {
+      console.error('Error fetching filtered currencies:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    res.json(results[0]);  // Send the result to the frontend
+  });
+});
+
+// Route to add a new currency
+app.post('/api/admin/currencies', (req, res) => {
+  const { currencyCode, symbol, exchangeRate } = req.body;
+
+  // Validate required fields
+  if (!currencyCode || !symbol || !exchangeRate) {
+    return res.status(400).json({ error: 'Currency code, symbol, and exchange rate are required' });
+  }
+
+  const query = 'CALL AddCurrency(?, ?, ?)';  // Call the stored procedure to add the currency
+
+  db.query(query, [currencyCode, symbol, exchangeRate], (err, results) => {
+    if (err) {
+      console.error('Error adding currency:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json({ message: 'Currency added successfully' });
+  });
+});
+
+// Route to add a new currency
+app.post('/api/admin/currencies', (req, res) => {
+  const { currencyCode, symbol, exchangeRate, currencyActive } = req.body;
+
+  // Validate the required fields
+  if (!currencyCode || !symbol || !exchangeRate) {
+    return res.status(400).json({ error: 'Currency code, symbol, and exchange rate are required' });
+  }
+
+  const query = 'CALL AddCurrency(?, ?, ?)';  // Call the stored procedure to add the currency
+
+  db.query(query, [currencyCode, symbol, exchangeRate], (err, results) => {
+    if (err) {
+      console.error('Error adding currency:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json({ message: 'Currency added successfully' });
+  });
+});

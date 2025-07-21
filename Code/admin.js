@@ -247,7 +247,6 @@ function filterUsersByType(type) {
 // Filter currencies by search term
 function filterCurrencies(searchTerm) {
     const filtered = window.allCurrencies.filter(currency => 
-        currency.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         currency.code.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
@@ -278,7 +277,6 @@ function createUserItem(user) {
             <div class="user-name">
                 ${user.name}
                 <span class="user-badge ${user.role}">${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</span>
-                <span class="status-badge ${user.status}">${user.status.charAt(0).toUpperCase() + user.status.slice(1)}</span>
             </div>
             <div class="user-email">${user.email}</div>
             <div class="user-details">
@@ -339,9 +337,6 @@ function createCurrencyItem(currency) {
                 ${ratesHtml}
             </div>
         </div>
-        <div class="currency-status">
-            <span class="status-badge ${currency.status}">${currency.status.charAt(0).toUpperCase() + currency.status.slice(1)}</span>
-        </div>
         <div class="currency-actions">
             <button class="edit-btn" onclick="editCurrency('${currency.id}')">✏️</button>
             <button class="delete-btn" onclick="deleteCurrency('${currency.id}')">🗑️</button>
@@ -378,25 +373,28 @@ const editUserCancelBtn = document.getElementById('editUserCancelBtn');
 const editUserSaveBtn   = document.getElementById('editUserSaveBtn');
 
 // Form fields
-const addFullName = document.getElementById('addFullName');
-const addEmail    = document.getElementById('addEmail');
-const addRole     = document.getElementById('addRole');
-const addStatus   = document.getElementById('addStatus');
+const addFullNameInput = document.getElementById('addFullName');
+const addEmailInput = document.getElementById('addEmail');
+const addPhoneNumInput = document.getElementById('addPhoneNum');
+const addPasswordInput = document.getElementById('addPassword');
+const addRoleSelect = document.getElementById('addRole');
 
 const editFullName = document.getElementById('editFullName');
 const editEmail    = document.getElementById('editEmail');
 const editRole     = document.getElementById('editRole');
-const editStatus   = document.getElementById('editStatus');
 
 // Keep track of which user we’re editing
 let currentEditingUser = null;
 
 // Show Add User modal
 window.openAddUserModal = function() {
-  addFullName.value = '';
-  addEmail.value    = '';
-  addRole.value     = 'customer';
-  addStatus.value   = 'active';
+  addFullNameInput.value = '';
+  addEmailInput.value = '';
+  addPhoneNumInput.value = '';
+  addPasswordInput.value = '';
+  addRoleSelect.value = 'customer';
+
+  // Show the modal
   addUserModal.style.display = 'flex';
 };
 
@@ -433,7 +431,6 @@ addUserSaveBtn.addEventListener('click', () => {
     name:    addFullName.value.trim(),
     email:   addEmail.value.trim(),
     role:    addRole.value,
-    status:  addStatus.value,
     joined:  new Date().toLocaleDateString(),
     lastLogin: '--',
     orders:  0,
@@ -485,24 +482,20 @@ const editCurrencySaveBtn   = document.getElementById('editCurrencySaveBtn');
 
 // Form fields
 const currencyCodeInput     = document.getElementById('currencyCode');
-const currencyNameInput     = document.getElementById('currencyName');
 const currencySymbolInput   = document.getElementById('currencySymbol');
-const currencyActiveInput   = document.getElementById('currencyActive');
 
-const editCurrencyNameInput   = document.getElementById('editCurrencyName');
 const editCurrencySymbolInput = document.getElementById('editCurrencySymbol');
-const editCurrencyActiveInput = document.getElementById('editCurrencyActive');
+
 
 let currentEditingCurrency = null;
 
 // Override Add‑Currency opener
 window.openAddCurrencyModal = function() {
   currencyCodeInput.value   = '';
-  currencyNameInput.value   = '';
   currencySymbolInput.value = '';
-  currencyActiveInput.checked = true;
   addCurrencyModal.style.display = 'flex';
 };
+
 // Override Edit‑Currency opener
 window.editCurrency = function(currencyId) {
   const curr = window.allCurrencies.find(c => c.id === currencyId);
@@ -535,10 +528,8 @@ window.addEventListener('click', e => {
 addCurrencySaveBtn.addEventListener('click', () => {
   // 1) Gather & validate your inputs
   const code   = currencyCodeInput.value.trim().toUpperCase();
-  const name   = currencyNameInput.value.trim();
   const symbol = currencySymbolInput.value.trim();
-  const status = currencyActiveInput.checked ? 'active' : 'suspended';
-  if (!code || !name || !symbol) {
+  if (!code || !symbol) {
     return alert('All fields are required.');
   }
 
@@ -546,9 +537,7 @@ addCurrencySaveBtn.addEventListener('click', () => {
   const newCurrency = {
     id:      code.toLowerCase(),
     code,
-    name,
     symbol,
-    status,
     updated: new Date().toLocaleString(),
     rates:   {}
   };
@@ -578,9 +567,8 @@ addCurrencySaveBtn.addEventListener('click', () => {
 editCurrencySaveBtn.addEventListener('click', () => {
   if (!currentEditingCurrency) return;
 
-  currentEditingCurrency.name   = editCurrencyNameInput.value.trim();
   currentEditingCurrency.symbol = editCurrencySymbolInput.value.trim();
-  currentEditingCurrency.status = editCurrencyActiveInput.checked ? 'active' : 'suspended';
+
   currentEditingCurrency.updated = new Date().toLocaleString();
 
   renderCurrencies();
@@ -733,7 +721,7 @@ async function fetchAndRenderUsers() {
           </div>
           <div class="user-actions">
             <button class="edit-btn" onclick="editUser('${user.user_id}')">✏️</button>
-            <button class="delete-btn" data-user-id="${user.user_id}">🗑️</button> <!-- Add userId as a data attribute -->
+            <button class="delete-btn" data-user-id="${user.user_id}">🗑️</button> 
           </div>
         </div>
       `;
@@ -741,12 +729,70 @@ async function fetchAndRenderUsers() {
       userList.insertAdjacentHTML('beforeend', userHTML);
     });
 
-    addDeleteButtonLogic();  // Add the delete button logic after rendering users
+    addDeleteButtonLogic();  
 
   } catch (error) {
     console.error('Error loading users:', error);
   }
 }
+
+// Close the Add User Modal when Cancel button is clicked
+addUserCancelBtn.addEventListener('click', () => {
+  addUserModal.style.display = 'none';  // Hide the modal
+});
+
+// Close the Add User Modal when Close button is clicked
+addUserCloseBtn.addEventListener('click', () => {
+  addUserModal.style.display = 'none';  // Hide the modal
+});
+
+// Save the new user when Save button is clicked
+addUserSaveBtn.addEventListener('click', async () => {
+  const display_name = addFullNameInput.value;
+  const email = addEmailInput.value;
+  const phone_num = addPhoneNumInput.value;
+  const password = addPasswordInput.value;
+  const role = addRoleSelect.value;
+
+  // Validate required fields
+  if (!display_name || !email || !phone_num || !password) {
+    alert('All fields are required.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/users', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        display_name,
+        email,
+        phone_num,
+        password,
+        role
+      }),
+    });
+
+    // Check if the response was successful
+    if (!response.ok) {
+      const errorResult = await response.json();
+      alert(errorResult.error || 'Failed to add user');
+      return;
+    }
+
+    const result = await response.json();
+    alert(result.message);  // Log the success message
+
+    // Close the modal and refresh the user list
+    addUserModal.style.display = 'none';  
+    fetchAndRenderUsers();  // Re-fetch and render the updated users list
+  } catch (error) {
+    console.error('Error adding user:', error);
+    alert('Error adding user');
+  }
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   // Fetch users initially
@@ -765,3 +811,139 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchAndRenderUsers();  // Re-fetch users with updated role filter
   });
 });
+
+// Display Currencies with Search and Filter
+async function fetchAndRenderCurrencies() {
+  try {
+    const userSearch = document.getElementById('userSearch').value;  // Get the search term
+    const userFilter = document.getElementById('userFilter').value;  // Get the selected currency filter
+
+    // Fetch currencies from the backend with search term and filter
+    const response = await fetch(`/api/admin/currencies?searchTerm=${userSearch}&roleFilter=${userFilter}`);
+    
+    // Check if the response was successful
+    if (!response.ok) {
+      throw new Error(`Error fetching currencies: ${response.statusText}`);
+    }
+
+    const currencies = await response.json();
+
+    // Check if the response is an array
+    if (!Array.isArray(currencies)) {
+      throw new Error('Expected currencies to be an array');
+    }
+
+    console.log('Fetched currencies:', currencies);  // Log the currencies for debugging
+
+    const currencyList = document.querySelector('.currencies-list');
+    currencyList.innerHTML = '';  // Clear existing currencies
+
+    // Ensure that currencies array is not empty
+    if (currencies.length === 0) {
+      currencyList.innerHTML = '<p>No currencies available</p>';
+      return;
+    }
+
+    currencies.forEach(currency => {
+      const currencyHTML = `
+        <div class="currency-item">
+          <div class="currency-symbol">${currency.symbol}</div>
+          <div class="currency-info">
+            <div class="currency-name">${currency.currency_code}</div>
+            <div class="currency-updated">Updated: ${new Date().toLocaleString()}</div>
+            <div class="currency-rates">
+              <div class="rate-item">1 ${currency.currency_code} = ${currency.exchange_rate_to_php} PHP</div>
+            </div>
+          </div>
+          <div class="currency-actions">
+            <button class="edit-btn" onclick="editCurrency(${currency.currency_id})">✏️</button>
+            <button class="delete-btn" onclick="deleteCurrency(${currency.currency_id})">🗑️</button>
+          </div>
+        </div>
+      `;
+
+      currencyList.insertAdjacentHTML('beforeend', currencyHTML);  // Append new currency HTML to the list
+    });
+  } catch (error) {
+    console.error('Error loading currencies:', error);  // Log any errors
+    alert('Error loading currencies: ' + error.message);  // Show the error to the user
+  }
+}
+
+// Call the function to fetch and display currencies when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+  fetchAndRenderCurrencies();  // Fetch and render currencies when page is loaded
+});
+
+// Function to open the Add Currency modal
+document.addEventListener('DOMContentLoaded', () => {
+  // Get the modal and button elements
+  const addCurrencyModal = document.getElementById('addCurrencyModal');
+  const addCurrencyBtn = document.getElementById('addCurrencyBtn');
+  const addCurrencyCloseBtn = document.getElementById('addCurrencyCloseBtn');
+  const addCurrencyCancelBtn = document.getElementById('addCurrencyCancelBtn');
+  const addCurrencySaveBtn = document.getElementById('addCurrencySaveBtn');
+  
+  const currencyCodeInput = document.getElementById('currencyCode');
+  const currencySymbolInput = document.getElementById('currencySymbol');
+  const exchangeRateInput = document.getElementById('exchange_rate');
+
+  // Show the Add Currency modal when the "Add Currency" button is clicked
+  addCurrencyBtn.addEventListener('click', () => {
+    currencyCodeInput.value = '';  // Clear the input fields
+    currencySymbolInput.value = '';
+    exchangeRateInput.value = '';
+
+    addCurrencyModal.style.display = 'flex';  // Show the modal
+  });
+
+  // Close the modal when the Close button is clicked
+  addCurrencyCloseBtn.addEventListener('click', () => {
+    addCurrencyModal.style.display = 'none';  // Hide the modal
+  });
+
+  // Close the modal when the Cancel button is clicked
+  addCurrencyCancelBtn.addEventListener('click', () => {
+    addCurrencyModal.style.display = 'none';  // Hide the modal
+  });
+
+  // Add the new currency when Save button is clicked
+  addCurrencySaveBtn.addEventListener('click', async () => {
+    const currencyCode = currencyCodeInput.value;
+    const symbol = currencySymbolInput.value;
+    const exchangeRate = exchangeRateInput.value;
+
+    // Validate the fields
+    if (!currencyCode || !symbol || !exchangeRate) {
+      alert('All fields are required.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/admin/currencies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currencyCode,
+          symbol,
+          exchangeRate,
+        }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert('Currency added successfully!');
+        addCurrencyModal.style.display = 'none';  // Close the modal
+        fetchAndRenderCurrencies();  // Re-fetch and render the updated currencies list
+      } else {
+        alert(result.error || 'Failed to add currency');
+      }
+    } catch (error) {
+      console.error('Error adding currency:', error);
+      alert('Error adding currency');
+    }
+  });
+});
+

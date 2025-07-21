@@ -116,8 +116,8 @@
                 <span class="section-icon">💱</span>
                 <h2>Currencies</h2>
               </div>
-              <button class="add-btn" onclick="openAddCurrencyModal()">
-                <span class="add-icon">➕</span>
+              <button class="add-btn" id="addCurrencyBtn">
+              <span class="add-icon">➕</span>
                 Add Currency
               </button>
             </div>
@@ -127,62 +127,7 @@
             </div>
 
             <div class="currencies-list">
-              <div class="currency-item">
-                <div class="currency-symbol">$</div>
-                <div class="currency-info">
-                  <div class="currency-name">USD - US Dollar</div>
-                  <div class="currency-updated">Updated: 1/11/2024, 6:00:00 PM</div>
-                  <div class="currency-rates">
-                    <div class="rate-item">1 USD = 0.85 EUR</div>
-                    <div class="rate-item">1 USD = 56.5 PHP</div>
-                  </div>
-                </div>
-                <div class="currency-status">
-                  <span class="status-badge active">Active</span>
-                </div>
-                <div class="currency-actions">
-                  <button class="edit-btn" onclick="editCurrency('usd')">✏️</button>
-                  <button class="-btn" onclick="deleteCurrency('usd')">🗑️</button>
-                </div>
-              </div>
 
-              <div class="currency-item">
-                <div class="currency-symbol">€</div>
-                <div class="currency-info">
-                  <div class="currency-name">EUR - Euro</div>
-                  <div class="currency-updated">Updated: 1/11/2024, 6:00:00 PM</div>
-                  <div class="currency-rates">
-                    <div class="rate-item">1 EUR = 1.18 USD</div>
-                    <div class="rate-item">1 EUR = 66.7 PHP</div>
-                  </div>
-                </div>
-                <div class="currency-status">
-                  <span class="status-badge active">Active</span>
-                </div>
-                <div class="currency-actions">
-                  <button class="edit-btn" onclick="editCurrency('eur')">✏️</button>
-                  <button class="delete-btn" onclick="deleteCurrency('eur')">🗑️</button>
-                </div>
-              </div>
-
-              <div class="currency-item">
-                <div class="currency-symbol">₱</div>
-                <div class="currency-info">
-                  <div class="currency-name">PHP - Philippine Peso</div>
-                  <div class="currency-updated">Updated: 1/11/2024, 6:00:00 PM</div>
-                  <div class="currency-rates">
-                    <div class="rate-item">1 PHP = 0.018 USD</div>
-                    <div class="rate-item">1 PHP = 0.015 EUR</div>
-                  </div>
-                </div>
-                <div class="currency-status">
-                  <span class="status-badge active">Active</span>
-                </div>
-                <div class="currency-actions">
-                  <button class="edit-btn" onclick="editCurrency('php')">✏️</button>
-                  <button class="delete-btn" onclick="deleteCurrency('php')">🗑️</button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -244,6 +189,7 @@
       </div>
     </div>
   </div>
+
   <!-- Add New User Modal -->
   <div class="modal-overlay" id="addUserModal">
     <div class="modal-content">
@@ -258,20 +204,19 @@
         <label for="addEmail">Email Address *</label>
         <input type="email" id="addEmail" required>
 
+        <label for="addPhoneNum">Phone Number *</label>
+        <input type="text" id="addPhoneNum" required>
+
+        <label for="addPassword">Password *</label>
+        <input type="password" id="addPassword" required>
+        
         <label for="addRole">Role</label>
         <select id="addRole">
           <option value="customer">Customer</option>
           <option value="staff">Staff</option>
-          <option value="manager">Manager</option>
           <option value="admin">Admin</option>
         </select>
 
-        <label for="addStatus">Status</label>
-        <select id="addStatus">
-          <option value="active">Active</option>
-          <option value="pending">Pending</option>
-          <option value="suspended">Suspended</option>
-        </select>
       </div>
       <div class="modal-footer">
         <button class="modal-cancel" id="addUserCancelBtn">Cancel</button>
@@ -315,7 +260,7 @@
     </div>
   </div>
 
-   <!-- Add New Currency Modal -->
+  <!-- Add New Currency Modal -->
   <div class="modal-overlay" id="addCurrencyModal">
     <div class="modal-content">
       <div class="modal-header">
@@ -326,51 +271,16 @@
         <label for="currencyCode">Currency Code *</label>
         <input type="text" id="currencyCode" required>
 
-        <label for="currencyName">Currency Name *</label>
-        <input type="text" id="currencyName" required>
-
-        <label for="currencySymbol">Symbol *</label>
+        <label for="symbol">Symbol *</label>
         <input type="text" id="currencySymbol" required>
 
-        <label>Status</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="currencyActive" checked>
-          <span class="toggle-slider"></span>
-        </div>
+        <label for="exchange_rate">Exchange Rate to PHP *</label>
+        <input type="number" id="exchange_rate" required step="0.0001">
+
       </div>
       <div class="modal-footer">
         <button class="modal-cancel" id="addCurrencyCancelBtn">Cancel</button>
-        <button class="modal-save"   id="addCurrencySaveBtn">Add Currency</button>
-      </div>
-    </div>
-  </div>
-
-    <!-- Add New Currency Modal -->
-  <div class="modal-overlay" id="addCurrencyModal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>Add New Currency</h3>
-        <button class="modal-close" id="addCurrencyCloseBtn">&times;</button>
-      </div>
-      <div class="modal-body">
-        <label for="currencyCode">Currency Code *</label>
-        <input type="text" id="currencyCode" required>
-
-        <label for="currencyName">Currency Name *</label>
-        <input type="text" id="currencyName" required>
-
-        <label for="currencySymbol">Symbol *</label>
-        <input type="text" id="currencySymbol" required>
-
-        <label>Status</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="currencyActive" checked>
-          <span class="toggle-slider"></span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="modal-cancel" id="addCurrencyCancelBtn">Cancel</button>
-        <button class="modal-save"   id="addCurrencySaveBtn">Add Currency</button>
+        <button class="modal-save" id="addCurrencySaveBtn">Add Currency</button>
       </div>
     </div>
   </div>
@@ -383,8 +293,6 @@
         <button class="modal-close" id="editCurrencyCloseBtn">&times;</button>
       </div>
       <div class="modal-body">
-        <label for="editCurrencyName">Currency Name *</label>
-        <input type="text" id="editCurrencyName" required>
 
         <label for="editCurrencySymbol">Symbol *</label>
         <input type="text" id="editCurrencySymbol" required>
