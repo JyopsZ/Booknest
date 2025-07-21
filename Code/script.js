@@ -1,4 +1,4 @@
-const books = [
+/* const books = [
   {
     id: 1,
     title: "The Midnight Library",
@@ -96,10 +96,42 @@ const books = [
     isBestseller: true,
     isNew: false
   }
-];
-
-let filteredBooks = [...books];
+]; */
+let books = [];
+let filteredBooks = [];
 let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+
+// Fetch book data from backend
+async function loadBooksFromServer() {
+  try {
+    const response = await fetch('/api/products');
+    if (!response.ok) throw new Error('Failed to load products');
+    
+    const data = await response.json();
+    
+    // Normalize server data to match expected keys (if needed)
+    books = data.map(book => ({
+      id: book.product_id,
+      title: book.title,
+      author: book.author,
+      price: parseFloat(book.price),
+      originalPrice: null, // Server doesn’t have this, you can add logic if needed
+      genre: book.genre,
+      stock: book.stock_quantity,
+      rating: parseFloat(book.rating || 0),
+      description: book.description || '',
+      isBestseller: !!book.isBestseller,
+      isNew: !!book.isNew
+    }));
+
+    filteredBooks = [...books];
+    renderBooks(filteredBooks);
+    updateResultsCount();
+  } catch (error) {
+    console.error('Error loading books:', error);
+    document.getElementById('booksGrid').innerHTML = `<p>Error loading books.</p>`;
+  }
+}
 
 function getStockStatus(stock) {
   if (stock === 0) return 'out-of-stock';
@@ -395,30 +427,27 @@ function proceedToCheckout() {
 }
 
 // Event listeners
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function () {
   // Update cart count on page load
   updateCartCount();
-  
-  // Render cart if on cart page
+
   if (document.getElementById('cartContent')) {
     renderCart();
-    // Add cart-layout class to main container
     const mainContainer = document.querySelector('.main-container');
     if (mainContainer) {
       mainContainer.classList.add('cart-layout');
     }
   } else {
-    // We're on the main page
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
       searchInput.addEventListener('input', filterBooks);
     }
-    
+
     const sortSelect = document.getElementById('sortSelect');
     if (sortSelect) {
       sortSelect.addEventListener('change', sortBooks);
     }
-    
+
     const priceRange = document.getElementById('priceRange');
     if (priceRange) {
       priceRange.addEventListener('input', () => {
@@ -426,15 +455,12 @@ document.addEventListener('DOMContentLoaded', function() {
         filterBooks();
       });
     }
-    
-    // Add event listeners to all checkboxes
+
     document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', filterBooks);
     });
-    
-    // Initial setup
+
     updatePriceDisplay();
-    renderBooks(books);
-    updateResultsCount();
+    await loadBooksFromServer(); // fetch from backend
   }
 });
