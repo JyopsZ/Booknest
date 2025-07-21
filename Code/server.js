@@ -41,6 +41,23 @@ app.get('/api/products', (req, res) => {
   });
 });
 
+app.get('/api/transactions', (req, res) => {
+  const query = `
+    SELECT tl.*, o.user_id, u.display_name 
+    FROM Transaction_Log tl
+    JOIN Orders o ON tl.order_id = o.order_id
+    JOIN Users u ON o.user_id = u.user_id
+    ORDER BY tl.timestamp DESC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching transactions:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(results);
+  });
+});
+
 // Start Server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);

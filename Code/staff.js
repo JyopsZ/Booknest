@@ -4,14 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ——— Navigation functionality ———
     const transactionLogBtn = document.getElementById('transactionLogBtn');
     const bookManagementBtn = document.getElementById('bookManagementBtn');
-    const analyticsBtn      = document.getElementById('analyticsBtn');
 
     const transactionSection = document.getElementById('transactionSection');
     const bookSection        = document.getElementById('bookSection');
-    const analyticsSection   = document.getElementById('analyticsSection');
 
-    const actionBtns = [transactionLogBtn, bookManagementBtn, analyticsBtn];
-    const sections   = [transactionSection, bookSection, analyticsSection];
+
+    const actionBtns = [transactionLogBtn, bookManagementBtn];
+    const sections   = [transactionSection, bookSection];
 
     actionBtns.forEach((btn, idx) => {
         btn.addEventListener('click', () => {
@@ -168,29 +167,66 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
     });
 
     //This renders the books
-    function renderBookItem(book) {
-  return `
-    <div class="inventory-item" data-id="${book.product_id}">
-      <div class="item-details">
-        <h3 class="item-title">${book.title}</h3>
-        <p class="item-author">by ${book.author}</p>
-        <p class="item-genre">${book.genre}</p>
+        function renderBookItem(book) {
+    return `
+        <div class="inventory-item" data-id="${book.product_id}">
+        <div class="item-details">
+            <h3 class="item-title">${book.title}</h3>
+            <p class="item-author">by ${book.author}</p>
+            <p class="item-genre">${book.genre}</p>
+            </div>
+            <div class="item-price-section">
+            <p class="item-price">₱${parseFloat(book.price).toFixed(2)}</p>
+            <p class="item-stock ${book.stock_quantity <= 5 ? 'low-stock' : ''}">Stock: <span class="item-stock-value">${book.stock_quantity}</span></p>
+            </div>
+        <div class="item-actions">
+            <div class="stock-controls">
+            <button class="stock-btn minus">➖</button>
+            <input type="number" class="stock-qty-input" placeholder="Qty" />
+            <button class="stock-btn plus">➕</button>
+            </div>
+            <button class="item-edit-btn">✏️ Edit</button>
         </div>
-        <div class="item-price-section">
-        <p class="item-price">₱${parseFloat(book.price).toFixed(2)}</p>
-        <p class="item-stock ${book.stock_quantity <= 5 ? 'low-stock' : ''}">Stock: <span class="item-stock-value">${book.stock_quantity}</span></p>
         </div>
-      <div class="item-actions">
-        <div class="stock-controls">
-        <button class="stock-btn minus">➖</button>
-        <input type="number" class="stock-qty-input" placeholder="Qty" />
-        <button class="stock-btn plus">➕</button>
+    `;
+    }
+    
+    function loadInventory() {
+    fetch('/api/products')
+        .then(res => res.json())
+        .then(books => {
+        const list = document.getElementById('inventoryList');
+        list.innerHTML = books.map(renderBookItem).join('');
+        attachStockHandlers();
+        attachEditButtons();
+        })
+        .catch(err => console.error('Failed to load inventory:', err));
+    }
+
+            function renderTransaction(transaction) {
+    return `
+        <div class="transaction-item" data-id="${transaction.transaction_id}">
+        <div class="transaction-details">
+            <h3 class="transaction-order">${transaction.order_id}</h3>
+            <p class="transaction-status">${transaction.payment_status}</p>
+            <p class="transaction-amount positive">${transaction.total_amount}</p>
+            <p class="transaction>${transaction.user_id}</p>
+            <p class="transaction-name>${transaction.display_name}</p>
+            </div>
         </div>
-        <button class="item-edit-btn">✏️ Edit</button>
-      </div>
-    </div>
-  `;
-}
+        </div>
+    `;
+    }
+
+        function loadTransaction() {
+    fetch('/api/transactions')
+        .then(res => res.json())
+        .then(transactions => {
+        const list = document.getElementById('transactionList');
+        list.innerHTML = transactions.map(renderTransaction).join('');
+        })
+        .catch(err => console.error('Failed to load transactions:', err))
+    }
 
 function attachStockHandlers() {
   document.querySelectorAll('.stock-btn.plus, .stock-btn.minus').forEach(btn => {
@@ -239,19 +275,8 @@ function attachStockHandlers() {
     });
     }
 
-    function loadInventory() {
-    fetch('/api/products')
-        .then(res => res.json())
-        .then(books => {
-        const list = document.getElementById('inventoryList');
-        list.innerHTML = books.map(renderBookItem).join('');
-        attachStockHandlers();
-        attachEditButtons();
-        })
-        .catch(err => console.error('Failed to load inventory:', err));
-    }
-
     loadInventory();
+    loadTransaction();
     attachEditButtons(); 
     // ——— Initialize tooltips & logs ———
     initializeTooltips();
