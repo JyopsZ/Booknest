@@ -645,3 +645,123 @@ window.addEventListener('load', function() {
     renderUsers();
     renderCurrencies();
 });
+
+// for display current user on admin page
+document.addEventListener('DOMContentLoaded', function() {
+  // Retrieve user data from localStorage
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+
+  if (user) {
+    // Dynamically update the admin name and role
+    document.querySelector('.admin-user-name').textContent = user.display_name;
+    document.querySelector('.admin-user-role').textContent = user.role;
+  } else {
+    console.log('No user data found in localStorage.');
+  }
+});
+
+// Delete logic for admin
+async function deleteUser(userId) {
+  try {
+    // Send a DELETE request to the backend
+    const response = await fetch(`/api/admin/users/${userId}`, {
+      method: 'DELETE',  // Use DELETE method
+    });
+
+    const result = await response.json();
+    console.log(result.message);  // Log the success message (optional)
+
+    // Re-fetch the users to refresh the list
+    fetchAndRenderUsers();  // Call the function to reload the user list
+
+  } catch (error) {
+    console.error('Error deleting user:', error);
+  }
+}
+
+// Add this logic to the Delete button in your HTML
+function addDeleteButtonLogic() {
+  const deleteButtons = document.querySelectorAll('.delete-btn');
+  deleteButtons.forEach(button => {
+    button.addEventListener('click', (event) => {
+      const userId = event.target.dataset.userId;  // Get the userId from the button data attribute
+      deleteUser(userId);  // Call the delete function
+    });
+  });
+}
+
+// Update your render function to add the userId as data attribute to the Delete button
+async function fetchAndRenderUsers() {
+  try {
+    const userSearch = document.getElementById('userSearch').value;
+    const userFilter = document.getElementById('userFilter').value;
+
+    const response = await fetch(`/api/admin/users?searchTerm=${userSearch}&roleFilter=${userFilter}`);
+    const users = await response.json();
+
+    const userList = document.querySelector('.users-list');
+    userList.innerHTML = '';
+
+    users.forEach(user => {
+      const initials = user.display_name ? user.display_name.split(' ').map(n => n[0]).join('').toUpperCase() : 'N/A';
+      const joinedDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+      const orders = user.total_orders ?? 0;
+      const spentInPHP = user.total_spent ? `₱${parseFloat(user.total_spent).toFixed(2)}` : '₱0.00';
+
+      const userHTML = `
+        <div class="user-item">
+          <div class="user-avatar">${initials}</div>
+          <div class="user-info">
+            <div class="user-name">
+              ${user.display_name || 'Unknown'}
+              <span class="user-badge ${user.role}">${user.role}</span>
+            </div>
+            <div class="user-email">${user.email}</div>
+            <div class="user-details">
+              <span>Joined: ${joinedDate}</span>
+            </div>
+          </div>
+          <div class="user-stats">
+            <div class="user-stat">
+              <span class="stat-label">Orders:</span>
+              <span class="stat-value">${orders}</span>
+            </div>
+            <div class="user-stat">
+              <span class="stat-label">Spent:</span>
+              <span class="stat-value">${spentInPHP}</span>
+            </div>
+          </div>
+          <div class="user-actions">
+            <button class="edit-btn" onclick="editUser('${user.user_id}')">✏️</button>
+            <button class="delete-btn" data-user-id="${user.user_id}">🗑️</button> <!-- Add userId as a data attribute -->
+          </div>
+        </div>
+      `;
+
+      userList.insertAdjacentHTML('beforeend', userHTML);
+    });
+
+    addDeleteButtonLogic();  // Add the delete button logic after rendering users
+
+  } catch (error) {
+    console.error('Error loading users:', error);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  // Fetch users initially
+  fetchAndRenderUsers();
+
+  // Get references to search and filter elements
+  const userSearch = document.getElementById('userSearch');
+  const userFilter = document.getElementById('userFilter');
+
+  // Add event listeners for search and filter
+  userSearch.addEventListener('input', () => {
+    fetchAndRenderUsers();  // Re-fetch users with updated search term
+  });
+
+  userFilter.addEventListener('change', () => {
+    fetchAndRenderUsers();  // Re-fetch users with updated role filter
+  });
+});

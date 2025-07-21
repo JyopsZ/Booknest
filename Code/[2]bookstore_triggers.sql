@@ -223,3 +223,65 @@ DELIMITER $$
         VALUES (OLD.product_id, OLD.title, OLD.author, OLD.price, OLD.genre, OLD.stock_quantity, OLD.rating, OLD.description, OLD.isBestseller, OLD.isNew, OLD.status, OLD.created_at, OLD.currency_id);
 	END;
 $$ DELIMITER ;
+
+
+-- -----------------------------------------------------
+-- Get info to display users in admin page
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE GetUserOrders()
+BEGIN
+    SELECT 
+        u.user_id,
+        u.display_name,
+        u.email,
+        u.role,
+        u.created_at,
+        IFNULL(COUNT(o.order_id), 0) AS total_orders, 
+        IFNULL(SUM(o.total_amount), 0) AS total_spent 
+    FROM Users u
+    LEFT JOIN Orders o ON u.user_id = o.user_id
+    GROUP BY u.user_id; 
+END
+
+$$ DELIMITER ;
+
+
+-- -----------------------------------------------------
+-- filtering based on role
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE GetFilteredUsers(IN searchTerm VARCHAR(255), IN roleFilter VARCHAR(255))
+BEGIN
+    SELECT 
+        u.user_id,
+        u.display_name,
+        u.email,
+        u.role,
+        u.created_at,
+        IFNULL(COUNT(o.order_id), 0) AS total_orders,
+        IFNULL(SUM(o.total_amount), 0) AS total_spent
+    FROM Users u
+    LEFT JOIN Orders o ON u.user_id = o.user_id
+    WHERE (u.display_name LIKE CONCAT('%', searchTerm, '%') OR u.email LIKE CONCAT('%', searchTerm, '%'))
+    AND (roleFilter = 'all' OR u.role = roleFilter)
+    GROUP BY u.user_id;
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Delete User - Admin
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE DeleteUser(IN userId INT)
+BEGIN
+    -- Now, delete the user
+    DELETE FROM Users WHERE user_id = userId;
+END
+
+$$ DELIMITER ;

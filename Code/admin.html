@@ -6,6 +6,7 @@
   <title>Admin Dashboard - BookNest</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="admin.css">
+  
 </head>
 <body>
 
@@ -63,38 +64,6 @@
         <div class="admin-user-role">System Administrator</div>
       </div>
     </div>
-
-    <div class="admin-stats">
-      <div class="stat-card">
-        <div class="stat-icon user-icon">👥</div>
-        <div class="stat-content">
-          <div class="stat-number">5</div>
-          <div class="stat-label">Total Users</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon active-icon">📈</div>
-        <div class="stat-content">
-          <div class="stat-number">4</div>
-          <div class="stat-label">Active Users</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon revenue-icon">💰</div>
-        <div class="stat-content">
-          <div class="stat-number">$291.78</div>
-          <div class="stat-label">Total Revenue</div>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon currency-icon">💱</div>
-        <div class="stat-content">
-          <div class="stat-number">3</div>
-          <div class="stat-label">Active Currencies</div>
-        </div>
-      </div>
-    </div>
-
     <div class="admin-nav">
       <button class="admin-nav-btn active" data-section="user-management">
         <span class="nav-icon">👥</span>
@@ -128,177 +97,13 @@
             <select class="filter-select" id="userFilter">
               <option value="all">All Users</option>
               <option value="customer">Customer</option>
-              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
               <option value="staff">Staff</option>
             </select>
           </div>
         </div>
 
         <div class="users-list">
-          <div class="user-item">
-            <div class="user-avatar">JD</div>
-            <div class="user-info">
-              <div class="user-name">
-                John Doe
-                <span class="user-badge customer">Customer</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="user-email">john.doe@example.com</div>
-              <div class="user-details">
-                <span>Joined: 1/15/2023</span>
-              </div>
-            </div>
-            <div class="user-stats">
-              <div class="user-stat">
-                <span class="stat-label">Last Login:</span>
-                <span class="stat-value">1/10/2024</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Orders:</span>
-                <span class="stat-value">8</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Spent:</span>
-                <span class="stat-value">$156.47</span>
-              </div>
-            </div>
-            <div class="user-actions">
-              <button class="edit-btn" onclick="editUser('john-doe')">✏️</button>
-              <button class="delete-btn" onclick="deleteUser('john-doe')">🗑️</button>
-            </div>
-          </div>
-
-          <div class="user-item">
-            <div class="user-avatar">JS</div>
-            <div class="user-info">
-              <div class="user-name">
-                Jane Smith
-                <span class="user-badge customer">Customer</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="user-email">jane.smith@example.com</div>
-              <div class="user-details">
-                <span>Joined: 2/23/2023</span>
-              </div>
-            </div>
-            <div class="user-stats">
-              <div class="user-stat">
-                <span class="stat-label">Last Login:</span>
-                <span class="stat-value">1/9/2024</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Orders:</span>
-                <span class="stat-value">4</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Spent:</span>
-                <span class="stat-value">$89.32</span>
-              </div>
-            </div>
-            <div class="user-actions">
-              <button class="edit-btn" onclick="editUser('jane-smith')">✏️</button>
-              <button class="delete-btn" onclick="deleteUser('jane-smith')">🗑️</button>
-            </div>
-          </div>
-
-          <div class="user-item">
-            <div class="user-avatar">SJ</div>
-            <div class="user-info">
-              <div class="user-name">
-                Sarah Johnson
-                <span class="user-badge manager">Manager</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="user-email">sarah.johnson@bookstore.com</div>
-              <div class="user-details">
-                <span>Joined: 6/12/2022</span>
-              </div>
-            </div>
-            <div class="user-stats">
-              <div class="user-stat">
-                <span class="stat-label">Last Login:</span>
-                <span class="stat-value">1/11/2024</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Orders:</span>
-                <span class="stat-value">0</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Spent:</span>
-                <span class="stat-value">$0.00</span>
-              </div>
-            </div>
-            <div class="user-actions">
-              <button class="edit-btn" onclick="editUser('sarah-johnson')">✏️</button>
-              <button class="delete-btn" onclick="deleteUser('sarah-johnson')">🗑️</button>
-            </div>
-          </div>
-
-          <div class="user-item">
-            <div class="user-avatar">MW</div>
-            <div class="user-info">
-              <div class="user-name">
-                Mike Wilson
-                <span class="user-badge staff">Staff</span>
-                <span class="status-badge active">Active</span>
-              </div>
-              <div class="user-email">mike.wilson@bookstore.com</div>
-              <div class="user-details">
-                <span>Joined: 3/15/2023</span>
-              </div>
-            </div>
-            <div class="user-stats">
-              <div class="user-stat">
-                <span class="stat-label">Last Login:</span>
-                <span class="stat-value">1/11/2024</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Orders:</span>
-                <span class="stat-value">0</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Spent:</span>
-                <span class="stat-value">$0.00</span>
-              </div>
-            </div>
-            <div class="user-actions">
-              <button class="edit-btn" onclick="editUser('mike-wilson')">✏️</button>
-              <button class="delete-btn" onclick="deleteUser('mike-wilson')">🗑️</button>
-            </div>
-          </div>
-
-          <div class="user-item">
-            <div class="user-avatar">RB</div>
-            <div class="user-info">
-              <div class="user-name">
-                Robert Brown
-                <span class="user-badge customer">Customer</span>
-                <span class="status-badge suspended">Suspended</span>
-              </div>
-              <div class="user-email">robert.brown@example.com</div>
-              <div class="user-details">
-                <span>Joined: 5/10/2023</span>
-              </div>
-            </div>
-            <div class="user-stats">
-              <div class="user-stat">
-                <span class="stat-label">Last Login:</span>
-                <span class="stat-value">12/20/2023</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Orders:</span>
-                <span class="stat-value">2</span>
-              </div>
-              <div class="user-stat">
-                <span class="stat-label">Spent:</span>
-                <span class="stat-value">$45.99</span>
-              </div>
-            </div>
-            <div class="user-actions">
-              <button class="edit-btn" onclick="editUser('robert-brown')">✏️</button>
-              <button class="delete-btn" onclick="deleteUser('robert-brown')">🗑️</button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -337,7 +142,7 @@
                 </div>
                 <div class="currency-actions">
                   <button class="edit-btn" onclick="editCurrency('usd')">✏️</button>
-                  <button class="delete-btn" onclick="deleteCurrency('usd')">🗑️</button>
+                  <button class="-btn" onclick="deleteCurrency('usd')">🗑️</button>
                 </div>
               </div>
 
@@ -489,24 +294,23 @@
         <label for="editEmail">Email Address *</label>
         <input type="email" id="editEmail" required>
 
+        <label for="editPhone">Phone Number *</label>
+        <input type="text" id="editPhone" required>
+
+        <label for="editPassword">Password *</label>
+        <input type="password" id="editPassword" required>
+
         <label for="editRole">Role</label>
         <select id="editRole">
           <option value="customer">Customer</option>
           <option value="staff">Staff</option>
-          <option value="manager">Manager</option>
           <option value="admin">Admin</option>
         </select>
 
-        <label for="editStatus">Status</label>
-        <select id="editStatus">
-          <option value="active">Active</option>
-          <option value="pending">Pending</option>
-          <option value="suspended">Suspended</option>
-        </select>
       </div>
       <div class="modal-footer">
         <button class="modal-cancel" id="editUserCancelBtn">Cancel</button>
-        <button class="modal-save"   id="editUserSaveBtn">Save Changes</button>
+        <button class="modal-save" id="editUserSaveBtn">Save Changes</button>
       </div>
     </div>
   </div>

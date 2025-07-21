@@ -122,3 +122,39 @@ app.post('/api/login', (req, res) => {
     res.status(200).json({ message: 'Login successful', user });
   });
 });
+
+// Use this single API route for fetching and filtering users
+app.get('/api/admin/users', (req, res) => {
+  const { searchTerm = '', roleFilter = 'All Users' } = req.query;  // Default to 'all' if no role filter is provided
+
+  // Call the stored procedure with search term and role filter
+  const query = 'CALL GetFilteredUsers(?, ?)';
+
+  db.query(query, [searchTerm, roleFilter], (err, results) => {
+    if (err) {
+      console.error('Error fetching filtered users:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json(results[0]);  // Send back the result from the stored procedure
+  });
+});
+
+// Admin Delete User
+app.delete('/api/admin/users/:userId', (req, res) => {
+  const { userId } = req.params;  // Get the userId from the URL parameter
+
+  // Call the DeleteUser stored procedure
+  const query = 'CALL DeleteUser(?)';
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      console.error('Error deleting user:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json({ message: 'User deleted successfully' });
+  });
+});
+
+
