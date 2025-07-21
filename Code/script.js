@@ -464,3 +464,96 @@ document.addEventListener('DOMContentLoaded', async function () {
     await loadBooksFromServer(); // fetch from backend
   }
 });
+
+//Register Logic
+document.addEventListener('DOMContentLoaded', () => {
+  const registerForm = document.getElementById('registerForm');
+
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(registerForm);
+      const data = {
+        fullName: formData.get('fullName'),
+        email: formData.get('email'),
+        phone: formData.get('phone'),
+        password: formData.get('password')
+      };
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('Registered successfully!');
+          window.location.href = 'login.html';
+        } else {
+          alert(result.error || 'Registration failed.');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('Something went wrong. Please try again.');
+      }
+    });
+  }
+});
+
+// Login Logic
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.getElementById('loginForm');
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formData = new FormData(loginForm);
+      const data = {
+        email: formData.get('email'),
+        password: formData.get('password')
+      };
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          alert('Login successful!');
+
+          // Store user info locally
+          localStorage.setItem('booknest-user', JSON.stringify(result.user));
+
+          // Role-based redirect
+          const userRole = result.user.role;
+          if (userRole === 'Admin') {
+            window.location.href = 'admin.html';
+          } 
+          else if (userRole == 'Staff'){
+            window.location.href = 'staff.html';
+          }
+          else if (userRole === 'Customer') {
+            window.location.href = 'index.html';
+          } else {
+            alert('Unknown role. Contact support.');
+          }
+
+        } else {
+          alert(result.error || 'Login failed.');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        alert('Something went wrong.');
+      }
+    });
+  }
+});
