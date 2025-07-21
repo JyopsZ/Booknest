@@ -236,3 +236,38 @@ app.post('/api/admin/currencies', (req, res) => {
     res.json({ message: 'Currency added successfully' });
   });
 });
+
+// Route to delete currency
+app.delete('/api/admin/currencies/:currency_id', (req, res) => {
+  const { currency_id } = req.params;  // Extract 'currency_id' from the URL parameter
+
+  const query = 'DELETE FROM Currencies WHERE currency_id = ?';  // SQL query using 'currency_id'
+  
+  db.query(query, [currency_id], (err, results) => {
+    if (err) {
+      console.error('Error deleting currency:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Currency not found' });
+    }
+
+    res.json({ message: 'Currency deleted successfully' });
+  });
+});
+
+/*
+// Route to get all currencies
+app.get('/api/admin/currencies', (req, res) => {
+  const query = 'SELECT * FROM Currencies';  // Fetch all currencies from the Currencies table
+
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error('Error fetching currencies:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    res.json(results);  // Send the result as a response
+  });
+});*/

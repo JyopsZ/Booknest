@@ -497,8 +497,8 @@ window.openAddCurrencyModal = function() {
 };
 
 // Override Edit‑Currency opener
-window.editCurrency = function(currencyId) {
-  const curr = window.allCurrencies.find(c => c.id === currencyId);
+window.editCurrency = function(currency_id) {
+  const curr = window.allCurrencies.find(c => c.id === currency_id);
   if (!curr) return;
   currentEditingCurrency = curr;
 
@@ -577,17 +577,15 @@ editCurrencySaveBtn.addEventListener('click', () => {
 });
 
 
-function deleteCurrency(currencyId) {
-    const currency = window.allCurrencies.find(c => c.id === currencyId);
+function deleteCurrency(currency_id) {
+    const currency = window.allCurrencies.find(c => c.id === currency_id);
     if (currency && confirm(`Are you sure you want to delete currency: ${currency.name}?`)) {
-        window.allCurrencies = window.allCurrencies.filter(c => c.id !== currencyId);
-        window.filteredCurrencies = window.filteredCurrencies.filter(c => c.id !== currencyId);
+        window.allCurrencies = window.allCurrencies.filter(c => c.id !== currency_id);
+        window.filteredCurrencies = window.filteredCurrencies.filter(c => c.id !== currency_id);
         renderCurrencies();
         updateCurrencyStats();
     }
 }
-
-
 
 function updateExchangeRate() {
     const fromCurrency = document.getElementById('fromCurrency').value;
@@ -813,6 +811,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Display Currencies with Search and Filter
+// Display Currencies with Search and Filter
 async function fetchAndRenderCurrencies() {
   try {
     const userSearch = document.getElementById('userSearch').value;  // Get the search term
@@ -867,6 +866,29 @@ async function fetchAndRenderCurrencies() {
   } catch (error) {
     console.error('Error loading currencies:', error);  // Log any errors
     alert('Error loading currencies: ' + error.message);  // Show the error to the user
+  }
+}
+
+// Delete currency logic
+async function deleteCurrency(currency_id) {
+  const confirmed = confirm('Are you sure you want to delete this currency?');
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(`/api/admin/currencies/${currency_id}`, {
+      method: 'DELETE',
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert('Currency deleted successfully!');
+      fetchAndRenderCurrencies();  // Re-fetch and render the updated currencies list
+    } else {
+      alert(result.error || 'Failed to delete currency');
+    }
+  } catch (error) {
+    console.error('Error deleting currency:', error);
+    alert('Error deleting currency');
   }
 }
 
@@ -946,4 +968,68 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+/*
+// Fetch currencies from the backend and populate dropdowns
+async function loadCurrenciesForExchange() {
+  try {
+    const response = await fetch('/api/admin/currencies');
+    const currencies = await response.json();
+    
+    const fromCurrencyDropdown = document.getElementById('fromCurrency');
+    const toCurrencyDropdown = document.getElementById('toCurrency');
 
+    // Clear existing options
+    fromCurrencyDropdown.innerHTML = '<option value="">Select currency</option>';
+    toCurrencyDropdown.innerHTML = '<option value="">Select currency</option>';
+
+    // Add currencies as options
+    currencies.forEach(currency => {
+      const optionFrom = document.createElement('option');
+      optionFrom.value = currency.currency_code;
+      optionFrom.textContent = `${currency.currency_code} - ${currency.symbol}`;
+      fromCurrencyDropdown.appendChild(optionFrom);
+
+      const optionTo = document.createElement('option');
+      optionTo.value = currency.currency_code;
+      optionTo.textContent = `${currency.currency_code} - ${currency.symbol}`;
+      toCurrencyDropdown.appendChild(optionTo);
+    });
+  } catch (error) {
+    console.error('Error fetching currencies for exchange rate:', error);
+    alert('Error loading currencies');
+  }
+}
+
+// Function to calculate exchange rate based on selected currencies
+function calculateExchangeRate() {
+  const fromCurrency = document.getElementById('fromCurrency').value;
+  const toCurrency = document.getElementById('toCurrency').value;
+  const exchangeRateInput = document.getElementById('exchangeRate');
+
+  // Check if both currencies are selected
+  if (fromCurrency && toCurrency && fromCurrency !== toCurrency) {
+    const fromCurrencyData = window.allCurrencies.find(c => c.currency_code === fromCurrency);
+    const toCurrencyData = window.allCurrencies.find(c => c.currency_code === toCurrency);
+
+    if (fromCurrencyData && toCurrencyData && fromCurrencyData.exchange_rate_to_php && toCurrencyData.exchange_rate_to_php) {
+      const rate = (fromCurrencyData.exchange_rate_to_php / toCurrencyData.exchange_rate_to_php).toFixed(4);
+      exchangeRateInput.value = rate;
+    } else {
+      alert('Error calculating exchange rate');
+    }
+  } else {
+    exchangeRateInput.value = '';
+  }
+}
+
+// Initialize the exchange rate section
+document.addEventListener('DOMContentLoaded', function() {
+  loadCurrenciesForExchange();  // Populate currency dropdowns on page load
+
+  // Set up event listeners for the dropdowns
+  const fromCurrency = document.getElementById('fromCurrency');
+  const toCurrency = document.getElementById('toCurrency');
+  
+  fromCurrency.addEventListener('change', calculateExchangeRate);
+  toCurrency.addEventListener('change', calculateExchangeRate);
+});*/
