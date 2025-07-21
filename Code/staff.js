@@ -91,10 +91,28 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         addModal.style.display = 'flex';
     });
-    document.getElementById('addModalSaveBtn').addEventListener('click', () => {
-        // handle adding new book
-        addModal.style.display = 'none';
-    });
+document.getElementById('addModalSaveBtn').addEventListener('click', () => {
+  const data = {
+    title: document.getElementById('addTitle').value,
+    author: document.getElementById('addAuthor').value,
+    genre: document.getElementById('addGenre').value,
+    price: parseFloat(document.getElementById('addPrice').value),
+    stock_quantity: parseInt(document.getElementById('addStock').value) || 0,
+    currency_id: 1 // PHP
+  };
+
+  fetch('/api/products', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+    .then(res => res.json())
+    .then(() => {
+      addModal.style.display = 'none';
+      loadInventory(); // Refresh book list
+    })
+    .catch(err => console.error('Add book failed:', err));
+});
 
     // Adjust stock directly based on user input quantity
 document.querySelectorAll('.stock-btn.plus').forEach(btn => {
@@ -149,6 +167,92 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
         });
     });
 
+    //This renders the books
+    function renderBookItem(book) {
+  return `
+    <div class="inventory-item" data-id="${book.product_id}">
+      <div class="item-details">
+        <h3 class="item-title">${book.title}</h3>
+        <p class="item-author">by ${book.author}</p>
+        <p class="item-genre">${book.genre}</p>
+        </div>
+        <div class="item-price-section">
+        <p class="item-price">₱${parseFloat(book.price).toFixed(2)}</p>
+        <p class="item-stock ${book.stock_quantity <= 5 ? 'low-stock' : ''}">Stock: <span class="item-stock-value">${book.stock_quantity}</span></p>
+        </div>
+      <div class="item-actions">
+        <div class="stock-controls">
+        <button class="stock-btn minus">➖</button>
+        <input type="number" class="stock-qty-input" placeholder="Qty" />
+        <button class="stock-btn plus">➕</button>
+        </div>
+        <button class="item-edit-btn">✏️ Edit</button>
+      </div>
+    </div>
+  `;
+}
+
+function attachStockHandlers() {
+  document.querySelectorAll('.stock-btn.plus, .stock-btn.minus').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const item = btn.closest('.inventory-item');
+      const input = item.querySelector('.stock-qty-input');
+      const stockSpan = item.querySelector('.item-stock-value');
+      const productId = item.getAttribute('data-id');
+      const current = parseInt(stockSpan.textContent, 10);
+      const qty = parseInt(input.value, 10);
+      if (isNaN(qty) || qty < 0) return;
+
+      const updated = btn.classList.contains('plus') ? current + qty : Math.max(0, current - qty);
+      fetch(`/api/products/${productId}/stock`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock_quantity: updated })
+      })
+        .then(res => res.json())
+        .then(() => {
+          stockSpan.textContent = updated;
+          stockSpan.parentElement.classList.toggle('low-stock', updated <= 5);
+          input.value = '';
+        })
+        .catch(err => console.error('Stock update failed:', err));
+    });
+  });
+}
+
+    function attachEditButtons() {
+    document.querySelectorAll('.item-edit-btn').forEach(btn => {
+        btn.addEventListener('click', e => {
+        e.preventDefault();
+        const inv = btn.closest('.inventory-item');
+        currentEditingItem = inv;
+
+        document.getElementById('modalTitle').value         = inv.querySelector('.item-title').textContent;
+        document.getElementById('modalAuthor').value        = inv.querySelector('.item-author').textContent.replace(/^by\s*/i, '');
+        document.getElementById('modalGenre').value         = inv.querySelector('.item-genre').textContent;
+        const priceTxt = inv.querySelector('.item-price').textContent.replace(/[^0-9.]/g, '');
+        document.getElementById('modalPrice').value         = priceTxt;
+        document.getElementById('modalOriginalPrice').value = priceTxt;
+
+        openEditModal();
+        });
+    });
+    }
+
+    function loadInventory() {
+    fetch('/api/products')
+        .then(res => res.json())
+        .then(books => {
+        const list = document.getElementById('inventoryList');
+        list.innerHTML = books.map(renderBookItem).join('');
+        attachStockHandlers();
+        attachEditButtons();
+        })
+        .catch(err => console.error('Failed to load inventory:', err));
+    }
+
+    loadInventory();
+    attachEditButtons(); 
     // ——— Initialize tooltips & logs ———
     initializeTooltips();
     console.log('BookNest Staff Portal initialized.');
