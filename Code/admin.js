@@ -968,68 +968,93 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
-/*
-// Fetch currencies from the backend and populate dropdowns
-async function loadCurrenciesForExchange() {
+
+// Update exchange rate logic
+async function updateExchangeRate() {
+  const fromCurrency = document.getElementById('fromCurrency').value.toUpperCase();
+  const exchangeRate = document.getElementById('exchangeRate').value;
+
+  if (!fromCurrency || !exchangeRate || isNaN(exchangeRate)) {
+    alert('Please select a currency and enter a valid exchange rate.');
+    return;
+  }
+
+  try {
+    const response = await fetch('/api/admin/currencies/exchange-rate', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currency_code: fromCurrency,
+        exchange_rate_to_php: parseFloat(exchangeRate),
+      }),
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert(result.message);
+      fetchAndRenderCurrencies(); // Optional: refresh currencies display
+    } else {
+      alert(result.error || 'Failed to update exchange rate');
+    }
+  } catch (error) {
+    console.error('Error updating exchange rate:', error);
+    alert('An error occurred while updating the exchange rate');
+  }
+}
+document.addEventListener('DOMContentLoaded', async () => {
+  await populateFromCurrencyOptions();
+});
+
+async function populateFromCurrencyOptions() {
   try {
     const response = await fetch('/api/admin/currencies');
     const currencies = await response.json();
-    
-    const fromCurrencyDropdown = document.getElementById('fromCurrency');
-    const toCurrencyDropdown = document.getElementById('toCurrency');
 
-    // Clear existing options
-    fromCurrencyDropdown.innerHTML = '<option value="">Select currency</option>';
-    toCurrencyDropdown.innerHTML = '<option value="">Select currency</option>';
+    const fromCurrencySelect = document.getElementById('fromCurrency');
+    fromCurrencySelect.innerHTML = '<option value="">Select currency</option>';  // Clear previous options
 
-    // Add currencies as options
     currencies.forEach(currency => {
-      const optionFrom = document.createElement('option');
-      optionFrom.value = currency.currency_code;
-      optionFrom.textContent = `${currency.currency_code} - ${currency.symbol}`;
-      fromCurrencyDropdown.appendChild(optionFrom);
-
-      const optionTo = document.createElement('option');
-      optionTo.value = currency.currency_code;
-      optionTo.textContent = `${currency.currency_code} - ${currency.symbol}`;
-      toCurrencyDropdown.appendChild(optionTo);
+      const option = document.createElement('option');
+      option.value = currency.currency_id;  // Use currency_id as value
+      option.textContent = `${currency.currency_code} - ${currency.symbol}`;
+      fromCurrencySelect.appendChild(option);
     });
+
+    // Store currency data globally for later use
+    window.allCurrencies = currencies;
   } catch (error) {
-    console.error('Error fetching currencies for exchange rate:', error);
-    alert('Error loading currencies');
+    console.error('Error loading currencies:', error);
   }
-}
+};
 
-// Function to calculate exchange rate based on selected currencies
-function calculateExchangeRate() {
-  const fromCurrency = document.getElementById('fromCurrency').value;
-  const toCurrency = document.getElementById('toCurrency').value;
-  const exchangeRateInput = document.getElementById('exchangeRate');
+async function updateExchangeRate() {
+  const fromCurrency = document.getElementById('fromCurrency').value;  // This should be currency_id
+  const exchangeRate = document.getElementById('exchangeRate').value;
 
-  // Check if both currencies are selected
-  if (fromCurrency && toCurrency && fromCurrency !== toCurrency) {
-    const fromCurrencyData = window.allCurrencies.find(c => c.currency_code === fromCurrency);
-    const toCurrencyData = window.allCurrencies.find(c => c.currency_code === toCurrency);
+  if (!fromCurrency || !exchangeRate || isNaN(exchangeRate)) {
+    alert('Please select a currency and enter a valid exchange rate.');
+    return;
+  }
 
-    if (fromCurrencyData && toCurrencyData && fromCurrencyData.exchange_rate_to_php && toCurrencyData.exchange_rate_to_php) {
-      const rate = (fromCurrencyData.exchange_rate_to_php / toCurrencyData.exchange_rate_to_php).toFixed(4);
-      exchangeRateInput.value = rate;
+  try {
+    const response = await fetch('/api/admin/currencies/exchange-rate', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        currency_id: fromCurrency,  // Use currency_id
+        exchange_rate_to_php: parseFloat(exchangeRate),
+      }),
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert(result.message);
+      fetchAndRenderCurrencies(); // Refresh the currency list
     } else {
-      alert('Error calculating exchange rate');
+      alert(result.error || 'Failed to update exchange rate');
     }
-  } else {
-    exchangeRateInput.value = '';
+  } catch (error) {
+    console.error('Error updating exchange rate:', error);
+    alert('An error occurred while updating the exchange rate');
   }
 }
-
-// Initialize the exchange rate section
-document.addEventListener('DOMContentLoaded', function() {
-  loadCurrenciesForExchange();  // Populate currency dropdowns on page load
-
-  // Set up event listeners for the dropdowns
-  const fromCurrency = document.getElementById('fromCurrency');
-  const toCurrency = document.getElementById('toCurrency');
-  
-  fromCurrency.addEventListener('change', calculateExchangeRate);
-  toCurrency.addEventListener('change', calculateExchangeRate);
-});*/

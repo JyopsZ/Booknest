@@ -205,7 +205,7 @@ DELIMITER $$
     FOR EACH ROW
     BEGIN
 		IF NEW.exchange_rate_to_php <> OLD.exchange_rate_to_php THEN
-			INSERT INTO Currency_Change_Log (curency_id, old_exchange_rate, new_exchange_rate)
+			INSERT INTO Currency_Change_Log (currency_id, old_exchange_rate, new_exchange_rate)
             VALUES (NEW.currency_id, OLD.exchange_rate_to_php, NEW.exchange_rate_to_php);
 		END IF;
 	END;

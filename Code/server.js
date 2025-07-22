@@ -415,8 +415,6 @@ app.get('/api/user/balance', (req, res) => {
   });
 });
 
-
-/*
 // Route to get all currencies
 app.get('/api/admin/currencies', (req, res) => {
   const query = 'SELECT * FROM Currencies';  // Fetch all currencies from the Currencies table
@@ -429,4 +427,30 @@ app.get('/api/admin/currencies', (req, res) => {
 
     res.json(results);  // Send the result as a response
   });
-});*/
+});
+
+// Route to update the exchange rate of a specific currency to PHP
+app.put('/api/admin/currencies/exchange-rate', (req, res) => {
+  const { currency_id, exchange_rate_to_php } = req.body;
+  console.log('Received currency_id:', currency_id);  // Debugging log
+
+  // Validate the inputs
+  if (!currency_id || isNaN(exchange_rate_to_php)) {
+    return res.status(400).json({ error: 'Invalid currency ID or exchange rate' });
+  }
+
+  const query = 'UPDATE Currencies SET exchange_rate_to_php = ? WHERE currency_id = ?';
+
+  db.query(query, [exchange_rate_to_php, currency_id], (err, results) => {
+    if (err) {
+      console.error('Error updating exchange rate:', err);
+      return res.status(500).json({ error: 'Database error while updating exchange rate' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Currency not found' });
+    }
+
+    res.json({ message: 'Exchange rate updated successfully' });
+  });
+});
