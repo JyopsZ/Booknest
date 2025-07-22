@@ -1,6 +1,37 @@
 // Staff Portal JavaScript - BookNest
 
 document.addEventListener('DOMContentLoaded', function() {
+
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+      
+      if (user) {
+          // Update the staff name and role
+          document.querySelector('.staff-name').textContent = user.display_name;
+          document.querySelector('.staff-role').textContent = user.role;
+          document.querySelector('.profile-name').textContent = user.display_name;
+      } else {
+          console.log('No user data found in localStorage');
+      }
+       function loadDashboardStats() {
+        fetch('/api/staff/dashboard-stats')
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                // Update revenue card
+                const revenueElement = document.querySelector('.stat-card.revenue .stat-value');
+                revenueElement.textContent = `₱${parseFloat(data.totalRevenue).toFixed(2)}`;
+                // Update transactions card
+                document.querySelector('.stat-card.transactions .stat-value').textContent = data.totalTransactions;
+                // Update catalog card
+                document.querySelector('.stat-card.catalog .stat-value').textContent = data.totalProducts;
+            })
+            .catch(error => {
+                console.error('Error loading dashboard stats:', error);
+
+            });
+    }
     // ——— Navigation functionality ———
     const transactionLogBtn = document.getElementById('transactionLogBtn');
     const bookManagementBtn = document.getElementById('bookManagementBtn');
@@ -67,14 +98,50 @@ document.addEventListener('DOMContentLoaded', function() {
             openEditModal();
         });
     });
-    modalSaveBtn.addEventListener('click', () => {
-        if (!currentEditingItem) return;
-        currentEditingItem.querySelector('.item-title').textContent  = document.getElementById('modalTitle').value;
-        currentEditingItem.querySelector('.item-author').textContent = document.getElementById('modalAuthor').value;
-        currentEditingItem.querySelector('.item-genre').textContent  = document.getElementById('modalGenre').value;
-        currentEditingItem.querySelector('.item-price').textContent  = `$${parseFloat(document.getElementById('modalPrice').value).toFixed(2)}`;
+modalSaveBtn.addEventListener('click', () => {
+    if (!currentEditingItem) return;
+    
+    const productId = currentEditingItem.getAttribute('data-id');
+    const updatedData = {
+        title: document.getElementById('modalTitle').value,
+        author: document.getElementById('modalAuthor').value,
+        genre: document.getElementById('modalGenre').value,
+        price: parseFloat(document.getElementById('modalPrice').value),
+        stock_quantity: parseInt(currentEditingItem.querySelector('.item-stock-value').textContent, 10)
+    };
+
+    // Send the update to the server
+    fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(updatedProduct => {
+        // Update the UI with the new values
+        currentEditingItem.querySelector('.item-title').textContent = updatedData.title;
+        currentEditingItem.querySelector('.item-author').textContent = `by ${updatedData.author}`;
+        currentEditingItem.querySelector('.item-genre').textContent = updatedData.genre;
+        currentEditingItem.querySelector('.item-price').textContent = `₱${updatedData.price.toFixed(2)}`;
+        
+        // The stock quantity will be updated via the separate stock controls
+        // The trigger will automatically handle the status change
+        
         closeEditModal();
+        loadInventory(); // Refresh the list to ensure consistency
+    })
+    .catch(error => {
+        console.error('Error updating product:', error);
+        alert('Failed to update product. Please try again.');
     });
+});
 
     // ——— ADD NEW BOOK MODAL ———
     const addModal  = document.getElementById('addModal');
@@ -181,9 +248,8 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
             </div>
         <div class="item-actions">
             <div class="stock-controls">
-            <button class="stock-btn minus">➖</button>
-            <input type="number" class="stock-qty-input" placeholder="Qty" />
-            <button class="stock-btn plus">➕</button>
+            <input type="number" class="stock-qty-input" value="${book.stock_quantity}" /></input>
+            <button class="save-stock-btn">💾 Save</button>
             </div>
             <button class="item-edit-btn">✏️ Edit</button>
         </div>
@@ -229,29 +295,67 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
     }
 
 function attachStockHandlers() {
-  document.querySelectorAll('.stock-btn.plus, .stock-btn.minus').forEach(btn => {
-    btn.addEventListener('click', () => {
+  document.querySelectorAll('.save-stock-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
       const item = btn.closest('.inventory-item');
       const input = item.querySelector('.stock-qty-input');
       const stockSpan = item.querySelector('.item-stock-value');
       const productId = item.getAttribute('data-id');
-      const current = parseInt(stockSpan.textContent, 10);
-      const qty = parseInt(input.value, 10);
-      if (isNaN(qty) || qty < 0) return;
+      const newStock = parseInt(input.value, 10);
 
-      const updated = btn.classList.contains('plus') ? current + qty : Math.max(0, current - qty);
+      // Validate input
+      if (isNaN(newStock) || newStock < 0) {
+        alert('Please enter a valid non-negative number');
+        input.value = '';
+        return;
+      }
+
+      // Disable button during request
+      btn.disabled = true;
+      btn.textContent = 'Saving...';
+
       fetch(`/api/products/${productId}/stock`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock_quantity: updated })
+        body: JSON.stringify({ stock_quantity: newStock })
       })
-        .then(res => res.json())
-        .then(() => {
-          stockSpan.textContent = updated;
-          stockSpan.parentElement.classList.toggle('low-stock', updated <= 5);
-          input.value = '';
-        })
-        .catch(err => console.error('Stock update failed:', err));
+      .then(res => {
+        if (!res.ok) throw new Error('Stock update failed');
+        return res.json();
+      })
+      .then(updatedProduct => {
+        // Update UI
+        stockSpan.textContent = updatedProduct.stock_quantity;
+        stockSpan.parentElement.classList.toggle('low-stock', updatedProduct.stock_quantity <= 5);
+        input.value = '';
+        
+        // Update status if displayed
+        const statusElement = item.querySelector('.item-status');
+        if (statusElement) {
+          statusElement.textContent = updatedProduct.stock_quantity > 0 ? 'In-stock' : 'Out-of-stock';
+          statusElement.className = 'item-status ' + 
+            (updatedProduct.stock_quantity > 0 ? 'in-stock' : 'out-of-stock');
+        }
+      })
+      .catch(err => {
+        console.error('Stock update failed:', err);
+        alert('Failed to update stock. Please try again.');
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.textContent = '💾 Save';
+      });
+    });
+  });
+
+  // Add input validation to prevent negative numbers
+  document.querySelectorAll('.stock-qty-input').forEach(input => {
+    input.addEventListener('change', () => {
+      if (parseInt(input.value) < 0) {
+        input.value = '';
+        alert('Stock cannot be negative');
+      }
     });
   });
 }
@@ -274,7 +378,7 @@ function attachStockHandlers() {
         });
     });
     }
-
+    loadDashboardStats();
     loadInventory();
     loadTransaction();
     attachEditButtons(); 

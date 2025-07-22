@@ -223,3 +223,122 @@ DELIMITER $$
         VALUES (OLD.product_id, OLD.title, OLD.author, OLD.price, OLD.genre, OLD.stock_quantity, OLD.rating, OLD.description, OLD.isBestseller, OLD.isNew, OLD.status, OLD.created_at, OLD.currency_id);
 	END;
 $$ DELIMITER ;
+
+
+-- -----------------------------------------------------
+-- Get info to display users in admin page
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE GetUserOrders()
+BEGIN
+    SELECT 
+        u.user_id,
+        u.display_name,
+        u.email,
+        u.role,
+        u.created_at,
+        IFNULL(COUNT(o.order_id), 0) AS total_orders, 
+        IFNULL(SUM(o.total_amount), 0) AS total_spent 
+    FROM Users u
+    LEFT JOIN Orders o ON u.user_id = o.user_id
+    GROUP BY u.user_id; 
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- filtering based on role
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE GetFilteredUsers(IN searchTerm VARCHAR(255), IN roleFilter VARCHAR(255))
+BEGIN
+    SELECT 
+        u.user_id,
+        u.display_name,
+        u.email,
+        u.role,
+        u.created_at,
+        IFNULL(COUNT(o.order_id), 0) AS total_orders,
+        IFNULL(SUM(o.total_amount), 0) AS total_spent
+    FROM Users u
+    LEFT JOIN Orders o ON u.user_id = o.user_id
+    WHERE (u.display_name LIKE CONCAT('%', searchTerm, '%') OR u.email LIKE CONCAT('%', searchTerm, '%'))
+    AND (roleFilter = 'all' OR u.role = roleFilter)
+    GROUP BY u.user_id;
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Add User - Admin
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE AddUser(
+    IN display_name VARCHAR(255),
+    IN email VARCHAR(255),
+    IN phone_num VARCHAR(20),
+    IN password VARCHAR(255),
+    IN role VARCHAR(50)
+)
+BEGIN
+    INSERT INTO users (display_name, email, phone_num, password, role, created_at)
+    VALUES (display_name, email, phone_num, password, role, NOW());
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Delete User - Admin
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE DeleteUser(IN userId INT)
+BEGIN
+    -- Now, delete the user
+    DELETE FROM Users WHERE user_id = userId;
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- search and display for currencies
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE GetFilteredCurrencies(IN searchTerm VARCHAR(255), IN roleFilter VARCHAR(255))
+BEGIN
+    SELECT 
+        c.currency_id,
+        c.currency_code,
+        c.symbol,
+        c.exchange_rate_to_php
+    FROM Currencies c
+    WHERE (c.currency_code LIKE CONCAT('%', searchTerm, '%') OR c.symbol LIKE CONCAT('%', searchTerm, '%'))
+    AND (roleFilter = 'all' OR c.currency_code = roleFilter);
+END
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Add currencies
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE AddCurrency(
+    IN currencyCode VARCHAR(5),
+    IN symbol VARCHAR(5),
+    IN exchangeRate DECIMAL(10,4)
+)
+BEGIN
+    INSERT INTO Currencies (currency_code, symbol, exchange_rate_to_php)
+    VALUES (currencyCode, symbol, exchangeRate);
+END
+
+$$ DELIMITER ;

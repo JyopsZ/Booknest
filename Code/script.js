@@ -1,102 +1,3 @@
-/* const books = [
-  {
-    id: 1,
-    title: "The Midnight Library",
-    author: "Matt Haig",
-    price: 699,
-    originalPrice: 799,
-    genre: "Fiction",
-    stock: 15,
-    rating: 4.5,
-    description: "A dazzling novel about all the choices that go into a life well lived, from the bestselling author.",
-    isBestseller: true,
-    isNew: false
-  },
-  {
-    id: 2,
-    title: "Atomic Habits",
-    author: "James Clear",
-    price: 549,
-    genre: "Self-Help",
-    stock: 8,
-    rating: 4.8,
-    description: "An Easy & Proven Way to Build Good Habits & Break Bad Ones. Transform your life with tiny changes.",
-    isBestseller: true,
-    isNew: false
-  },
-  {
-    id: 3,
-    title: "The Seven Husbands of Evelyn Hugo",
-    author: "Taylor Jenkins Reid",
-    price: 599,
-    genre: "Romance",
-    stock: 12,
-    rating: 4.6,
-    description: "A reclusive Hollywood icon finally tells her story in this captivating novel.",
-    isBestseller: false,
-    isNew: false
-  },
-  {
-    id: 4,
-    title: "Dune",
-    author: "Frank Herbert",
-    price: 750,
-    genre: "Science Fiction",
-    stock: 3,
-    rating: 4.4,
-    description: "Set on the desert planet Arrakis, this epic sci-fi masterpiece defined a genre.",
-    isBestseller: false,
-    isNew: false
-  },
-  {
-    id: 5,
-    title: "The Psychology of Money",
-    author: "Morgan Housel",
-    price: 649,
-    genre: "Business",
-    stock: 6,
-    rating: 4.7,
-    description: "Timeless lessons on wealth, greed, and happiness from one of the great financial minds.",
-    isBestseller: false,
-    isNew: true
-  },
-  {
-    id: 6,
-    title: "Where the Crawdads Sing",
-    author: "Delia Owens",
-    price: 599,
-    genre: "Mystery",
-    stock: 0,
-    rating: 4.3,
-    description: "A coming-of-age story and murder mystery set in the marshlands of North Carolina.",
-    isBestseller: false,
-    isNew: false
-  },
-  {
-    id: 7,
-    title: "1984",
-    author: "George Orwell",
-    price: 399,
-    genre: "Dystopian",
-    stock: 10,
-    rating: 4.7,
-    description: "A chilling dystopian novel about totalitarian control and the power of truth.",
-    isBestseller: false,
-    isNew: false
-  },
-  {
-    id: 8,
-    title: "The Lord of the Rings",
-    author: "J.R.R. Tolkien",
-    price: 899,
-    genre: "Fantasy",
-    stock: 5,
-    rating: 4.9,
-    description: "The epic fantasy trilogy that defined a genre and captured millions of hearts.",
-    isBestseller: true,
-    isNew: false
-  }
-]; */
 let books = [];
 let filteredBooks = [];
 let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
@@ -109,13 +10,12 @@ async function loadBooksFromServer() {
     
     const data = await response.json();
     
-    // Normalize server data to match expected keys (if needed)
     books = data.map(book => ({
       id: book.product_id,
       title: book.title,
       author: book.author,
       price: parseFloat(book.price),
-      originalPrice: null, // Server doesn’t have this, you can add logic if needed
+      originalPrice: null, 
       genre: book.genre,
       stock: book.stock_quantity,
       rating: parseFloat(book.rating || 0),
