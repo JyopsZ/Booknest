@@ -257,6 +257,7 @@ app.delete('/api/admin/currencies/:currency_id', (req, res) => {
   });
 });
 
+
 // Updated balance endpoint in server.js
 app.get('/api/user/balance', (req, res) => {
   const { user_id } = req.query;
@@ -413,6 +414,7 @@ app.get('/api/user/balance', (req, res) => {
     res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
   });
 });
+
 
 /*
 // Route to get all currencies
