@@ -386,3 +386,10 @@ function attachStockHandlers() {
     initializeTooltips();
     console.log('BookNest Staff Portal initialized.');
 });
+
+// Logout function for any page to use
+function logout() {
+  
+  sessionStorage.clear // although session data is not used
+  window.location.href = "index.html";
+}

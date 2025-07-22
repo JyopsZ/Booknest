@@ -968,6 +968,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// Logout function for any page to use
+function logout() {
+  
+  sessionStorage.clear // although session data is not used
+  window.location.href = "index.html";
+}
 /*
 // Fetch currencies from the backend and populate dropdowns
 async function loadCurrenciesForExchange() {

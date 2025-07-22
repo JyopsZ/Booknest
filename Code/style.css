@@ -2358,3 +2358,6 @@ a:not(.nav-button):not(.header-title a):not(.continue-shopping-btn):not(.continu
   display: none !important;
 }
 
+.padded-container {
+  padding-right: 300px;
+}

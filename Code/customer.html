@@ -11,18 +11,33 @@
 <header>
   <div class="header-left">
     <div class="header-title">
-      <a href="index.html">
+      <a href="customer.html">
         <div class="logo-icon">📚</div>
         <strong>BookNest</strong>
       </a>
     </div>
     <nav class="nav-buttons">
-      <a href="login.html" class="nav-button">Login</a>
-      <a href="register.html" class="nav-button">Register</a>
+      <a href="#" class="nav-button" onclick="logout()">Logout</a>
     </nav>
   </div>
   <div class="search-container">
-    <input type="text" class="search-input" id="searchInput" placeholder="Search books, authors...">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search books, authors...">
+    </div>
+
+  <div class="header-right">
+    <div class="profile-currency" onclick="window.location.href='profile.html'" style="cursor: pointer;">
+      <div class="profile-section">
+        <div class="profile-avatar">👤</div>
+        <span class="profile-name">emn</span>
+      </div>
+      <div class="currency-section">
+        <span class="currency-symbol">₱</span>
+        <span class="currency-amount">890.70</span>
+      </div>
+    </div>
+    <button class="cart-button" onclick="window.location.href='cart.html'">
+      🛒 Cart (<span id="cartCount">0</span>)
+    </button>
   </div>
 </header>
 

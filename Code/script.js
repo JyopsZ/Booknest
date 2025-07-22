@@ -442,7 +442,7 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'staff.html';
           }
           else if (userRole === 'Customer') {
-            window.location.href = 'index.html';
+            window.location.href = 'customer.html';
           } else {
             alert('Unknown role. Contact support.');
           }
@@ -457,3 +457,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// Logout function for any page to use
+function logout() {
+  
+  sessionStorage.clear // although session data is not used
+  window.location.href = "index.html";
+}

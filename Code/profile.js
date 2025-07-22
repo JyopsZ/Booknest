@@ -315,3 +315,10 @@ function updateCartCount() {
         cartCountElement.textContent = cartCount;
     }
 }
+
+// Logout function for any page to use
+function logout() {
+  
+  sessionStorage.clear // although session data is not used
+  window.location.href = "index.html";
+}
