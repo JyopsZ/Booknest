@@ -276,14 +276,15 @@
       </div>
       <div class="modal-body">
 
+        <label for="editCurrencyCode">Code *</label>
+        <input type="text" id="editCurrencyCode" required>
+        
         <label for="editCurrencySymbol">Symbol *</label>
         <input type="text" id="editCurrencySymbol" required>
+        
+        <label for="editCurrencyRate">Exchange Rate *</label>
+        <input type="text" id="editCurrencyRate" required>
 
-        <label>Status</label>
-        <div class="toggle-switch">
-          <input type="checkbox" id="editCurrencyActive">
-          <span class="toggle-slider"></span>
-        </div>
       </div>
       <div class="modal-footer">
         <button class="modal-cancel" id="editCurrencyCancelBtn">Cancel</button>

@@ -224,6 +224,25 @@ DELIMITER $$
 	END;
 $$ DELIMITER ;
 
+-- -----------------------------------------------------
+-- fetch all users
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE GetAllUsers()
+BEGIN
+    SELECT 
+        user_id,
+        display_name,
+        email,
+        phone_num,
+        role,
+        created_at
+    FROM Users 
+    GROUP BY user_id;
+END
+
+$$ DELIMITER ;
 
 -- -----------------------------------------------------
 -- Get info to display users in admin page
@@ -342,3 +361,4 @@ BEGIN
 END
 
 $$ DELIMITER ;
+

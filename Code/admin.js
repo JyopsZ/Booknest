@@ -2,10 +2,10 @@
 
 // Initialize the admin dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    initializeDashboard();
     setupEventListeners();
 });
 
+/*
 // Initialize dashboard functionality
 function initializeDashboard() {
     // Show user management section by default
@@ -17,7 +17,7 @@ function initializeDashboard() {
     
     // Update cart count
     updateCartCount();
-}
+}*/
 
 // Set up event listeners
 function setupEventListeners() {
@@ -143,7 +143,7 @@ function loadUserData() {
     ];
     
     // Store in global variable for filtering
-    window.allUsers = userData;
+    //window.allUsers = userData;
     window.filteredUsers = userData;
     
     updateUserStats();
@@ -196,6 +196,7 @@ function loadCurrencyData() {
     updateCurrencyStats();
 }
 
+/*
 // Update user statistics
 function updateUserStats() {
     const totalUsers = window.allUsers.length;
@@ -219,7 +220,7 @@ function updateCurrencyStats() {
     if (statCards.length >= 4) {
         statCards[3].querySelector('.stat-number').textContent = activeCurrencies;
     }
-}
+}*/
 
 // Filter users by search term
 function filterUsers(searchTerm) {
@@ -298,11 +299,10 @@ function createUserItem(user) {
             </div>
         </div>
         <div class="user-actions">
-            <button class="edit-btn" onclick="editUser('${user.id}')">✏️</button>
-            <button class="delete-btn" onclick="deleteUser('${user.id}')">🗑️</button>
+            <button class="edit-btn" onclick="editUser(${user.user_id})">✏️</button>  
+            <button class="delete-btn" onclick="deleteUser(${user.user_id})">🗑️</button> 
         </div>
     `;
-    
     return userItem;
 }
 
@@ -398,6 +398,7 @@ window.openAddUserModal = function() {
   addUserModal.style.display = 'flex';
 };
 
+/*
 // Show Edit User modal (overrides alert)
 window.editUser = function(userId) {
   const user = allUsers.find(u => u.id === userId);
@@ -416,7 +417,7 @@ window.editUser = function(userId) {
 );
 [editUserCloseBtn, editUserCancelBtn].forEach(btn =>
   btn.addEventListener('click', () => editUserModal.style.display = 'none')
-);
+);*/
 
 // Click‑outside to close
 window.addEventListener('click', e => {
@@ -449,7 +450,6 @@ editUserSaveBtn.addEventListener('click', () => {
   currentEditingUser.name   = editFullName.value.trim();
   currentEditingUser.email  = editEmail.value.trim();
   currentEditingUser.role   = editRole.value;
-  currentEditingUser.status = editStatus.value;
   renderUsers();
   updateUserStats();
   editUserModal.style.display = 'none';
@@ -495,7 +495,7 @@ window.openAddCurrencyModal = function() {
   currencySymbolInput.value = '';
   addCurrencyModal.style.display = 'flex';
 };
-
+/*
 // Override Edit‑Currency opener
 window.editCurrency = function(currency_id) {
   const curr = window.allCurrencies.find(c => c.id === currency_id);
@@ -508,8 +508,9 @@ window.editCurrency = function(currency_id) {
   editCurrencyActiveInput.checked = (curr.status === 'active');
 
   editCurrencyModal.style.display = 'flex';
-};
+};*/
 
+/*
 // Close & Cancel handlers
 [addCurrencyCloseBtn, addCurrencyCancelBtn].forEach(btn =>
   btn.addEventListener('click', () => addCurrencyModal.style.display = 'none')
@@ -522,7 +523,7 @@ window.editCurrency = function(currency_id) {
 window.addEventListener('click', e => {
   if (e.target === addCurrencyModal)  addCurrencyModal.style.display = 'none';
   if (e.target === editCurrencyModal) editCurrencyModal.style.display = 'none';
-});
+});*/
 
 // Save new currency
 addCurrencySaveBtn.addEventListener('click', () => {
@@ -811,7 +812,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Display Currencies with Search and Filter
-// Display Currencies with Search and Filter
 async function fetchAndRenderCurrencies() {
   try {
     const userSearch = document.getElementById('userSearch').value;  // Get the search term
@@ -1058,3 +1058,222 @@ async function updateExchangeRate() {
     alert('An error occurred while updating the exchange rate');
   }
 }
+
+// Open the Edit Currency Modal with pre-filled data
+window.editCurrency = function(currency_id) {
+    // Find the currency by its ID
+    const currency = window.allCurrencies.find(c => c.currency_id === currency_id);  // Correctly find currency by currency_id
+
+    if (!currency) {
+        alert('Currency not found!');
+        return;  // If the currency doesn't exist, exit the function
+    }
+
+    // Set currentEditingCurrency to the selected currency
+    window.currentEditingCurrency = currency;
+
+    // Pre-fill the form fields with the current data
+    document.getElementById('editCurrencyCode').value = currency.currency_code;  // Set the code
+    document.getElementById('editCurrencySymbol').value = currency.symbol;  // Set the symbol
+    document.getElementById('editCurrencyRate').value = currency.exchange_rate_to_php;  // Set the exchange rate
+    
+    // Show the modal
+    document.getElementById('editCurrencyModal').style.display = 'flex';
+};
+// Close the modal when Close or Cancel button is clicked
+document.getElementById('editCurrencyCloseBtn').addEventListener('click', () => {
+    document.getElementById('editCurrencyModal').style.display = 'none';  // Hide the modal
+});
+
+document.getElementById('editCurrencyCancelBtn').addEventListener('click', () => {
+    document.getElementById('editCurrencyModal').style.display = 'none';  // Hide the modal
+});
+
+// Close the modal if clicked outside the modal
+window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('editCurrencyModal')) {
+        document.getElementById('editCurrencyModal').style.display = 'none';  // Hide the modal
+    }
+});
+
+// Save the changes when Save button is clicked
+document.getElementById('editCurrencySaveBtn').addEventListener('click', async () => {
+    const currencyCode = document.getElementById('editCurrencyCode').value.trim();
+    const currencySymbol = document.getElementById('editCurrencySymbol').value.trim();
+    const exchangeRate = document.getElementById('editCurrencyRate').value.trim();
+
+    // Validate the inputs
+    if (!currencyCode || !currencySymbol || !exchangeRate) {
+        alert('All fields are required.');
+        return;
+    }
+
+    // Check if currentEditingCurrency is defined
+    if (!window.currentEditingCurrency) {
+        alert('No currency selected for editing!');
+        return;
+    }
+
+    const currency_id = window.currentEditingCurrency.currency_id;  // Get the current editing currency's ID
+
+    const updatedCurrency = {
+        currency_id,
+        currency_code: currencyCode,
+        symbol: currencySymbol,
+        exchange_rate_to_php: parseFloat(exchangeRate),
+    };
+
+    try {
+        const response = await fetch('/api/admin/currencies/exchange-rate', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedCurrency),
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Currency updated successfully!');
+            // Close the modal
+            document.getElementById('editCurrencyModal').style.display = 'none';
+            // Optionally, refresh the currency list
+            fetchAndRenderCurrencies();  // Re-fetch and render the updated currencies list
+        } else {
+            alert(result.error || 'Failed to update currency');
+        }
+    } catch (error) {
+        console.error('Error updating currency:', error);
+        alert('An error occurred while updating the currency');
+    }
+});
+
+// Fetch all users data
+async function fetchUsers() {
+    try {
+        const response = await fetch('/api/admin/users/all');  // API route to fetch all users
+        if (!response.ok) {
+            throw new Error('Error fetching users: ' + response.statusText);
+        }
+        const users = await response.json();
+        
+        // Store the fetched users globally
+        window.allUsers = users;
+
+        console.log('Fetched users:', window.allUsers);  // Debugging log: Check the users fetched
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        alert('Error fetching users: ' + error.message);
+    }
+}
+
+// Open the Edit User Modal with pre-filled data
+window.editUser = async function(user_id) {
+    // Fetch the users first to ensure we have the latest data
+    await fetchUsers();  // Ensure we have all users data before proceeding
+
+    console.log('Looking for user with ID:', user_id);
+
+    // Check if the allUsers array is populated
+    console.log('All users data:', window.allUsers);
+
+    // Ensure user_id comparison handles type correctly (convert to integer if needed)
+    const user = window.allUsers.find(u => u.user_id === parseInt(user_id));  // Ensure user_id comparison is done correctly
+
+    console.log('User found:', user);  // Log the user to verify
+
+    if (!user) {
+        console.log('User not found!');
+        alert('User not found!');
+        return;  // If the user doesn't exist, exit the function
+    }
+
+    // Set currentEditingUser to the selected user
+    window.currentEditingUser = user;
+
+    // Pre-fill the form fields with the current data
+    document.getElementById('editFullName').value = user.display_name;  // Set the full name
+    document.getElementById('editEmail').value = user.email;  // Set the email
+    document.getElementById('editPhone').value = user.phone_num;  // Set the phone number
+    document.getElementById('editRole').value = user.role;  // Set the role
+
+    // Show the modal
+    document.getElementById('editUserModal').style.display = 'flex';
+};
+
+// Close the modal when Close or Cancel button is clicked
+document.getElementById('editUserCloseBtn').addEventListener('click', () => {
+    console.log('Closing the Edit User Modal');
+    document.getElementById('editUserModal').style.display = 'none';  // Hide the modal
+});
+
+document.getElementById('editUserCancelBtn').addEventListener('click', () => {
+    console.log('Cancelling the Edit User action');
+    document.getElementById('editUserModal').style.display = 'none';  // Hide the modal
+});
+
+// Close the modal if clicked outside the modal
+window.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('editUserModal')) {
+        console.log('Closing the Edit User Modal by clicking outside');
+        document.getElementById('editUserModal').style.display = 'none';  // Hide the modal
+    }
+});
+
+// Save the changes when Save button is clicked
+document.getElementById('editUserSaveBtn').addEventListener('click', async () => {
+    const display_name = document.getElementById('editFullName').value.trim();
+    const email = document.getElementById('editEmail').value.trim();
+    const phone_num = document.getElementById('editPhone').value.trim();
+    const role = document.getElementById('editRole').value.trim();
+
+    // Validate the inputs
+    if (!display_name || !email || !phone_num || !role) {
+        console.log('Validation failed: All fields are required.');
+        alert('All fields are required.');
+        return;
+    }
+
+    // Check if currentEditingUser is defined
+    if (!window.currentEditingUser) {
+        console.log('No user selected for editing!');
+        alert('No user selected for editing!');
+        return;
+    }
+
+    const user_id = window.currentEditingUser.user_id;  // Get the current editing user's ID
+    console.log('Saving changes for User ID:', user_id);
+
+    const updatedUser = {
+        user_id,
+        display_name,
+        email,
+        phone_num,
+        role,
+    };
+
+    try {
+        const response = await fetch(`/api/admin/users/${user_id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedUser),
+        });
+
+        const result = await response.json();
+        console.log('Response from server:', result);
+
+        if (response.ok) {
+            alert('User updated successfully!');
+            console.log('User updated successfully!');
+            // Close the modal
+            document.getElementById('editUserModal').style.display = 'none';
+            // Optionally, refresh the user list
+            fetchAndRenderUsers();  // Re-fetch and render the updated users list
+        } else {
+            console.log(result.error || 'Failed to update user');
+            alert(result.error || 'Failed to update user');
+        }
+    } catch (error) {
+        console.error('Error updating user:', error);
+        alert('An error occurred while updating the user');
+    }
+});

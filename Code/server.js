@@ -454,3 +454,85 @@ app.put('/api/admin/currencies/exchange-rate', (req, res) => {
     res.json({ message: 'Exchange rate updated successfully' });
   });
 });
+
+// Route to update the exchange rate of a specific currency to PHP
+app.put('/api/admin/currencies/exchange-rate', (req, res) => {
+  const { currency_id, currency_code, symbol, exchange_rate_to_php } = req.body;
+  
+  // Validate the inputs
+  if (!currency_id || !currency_code || !symbol || isNaN(exchange_rate_to_php)) {
+    return res.status(400).json({ error: 'Invalid currency details or exchange rate' });
+  }
+
+  // Update currency details in the database
+  const query = `
+    UPDATE Currencies 
+    SET currency_code = ?, symbol = ?, exchange_rate_to_php = ? 
+    WHERE currency_id = ?
+  `;
+
+  db.query(query, [currency_code, symbol, exchange_rate_to_php, currency_id], (err, results) => {
+    if (err) {
+      console.error('Error updating currency:', err);
+      return res.status(500).json({ error: 'Database error while updating currency' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Currency not found' });
+    }
+
+    res.json({ message: 'Currency updated successfully' });
+  });
+});
+
+// Route to update user details
+app.put('/api/admin/users/:user_id', (req, res) => {
+    const { user_id } = req.params;  // Get the user_id from the URL parameter
+    const { display_name, email, phone_num, role } = req.body;  // Get the updated data from the request body
+
+    console.log('Received data for user update:', req.body);
+
+    // Validate the required fields
+    if (!display_name || !email || !phone_num || !role) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const query = `
+        UPDATE Users
+        SET display_name = ?, email = ?, phone_num = ?, role = ?
+        WHERE user_id = ?
+    `;
+
+    db.query(query, [display_name, email, phone_num, role, user_id], (err, results) => {
+        if (err) {
+            console.error('Error updating user:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.affectedRows === 0) {
+            console.log('User not found in the database');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        console.log('User updated successfully');
+        res.json({ message: 'User updated successfully' });
+    });
+});
+
+// API route for fetching all users
+app.get('/api/admin/users/all', (req, res) => {
+    console.log('Fetching all users...');  // Debugging log
+
+    const query = 'CALL GetAllUsers()';  // Stored procedure to fetch all users
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching all users:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        console.log('Fetched users:', results[0]);  // Log the fetched users
+
+        res.json(results[0]);
+    });
+});
