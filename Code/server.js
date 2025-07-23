@@ -276,22 +276,31 @@ app.post('/api/admin/currencies', (req, res) => {
 app.delete('/api/admin/currencies/:currency_id', (req, res) => {
   const { currency_id } = req.params;  // Extract 'currency_id' from the URL parameter
 
-  const query = 'DELETE FROM Currencies WHERE currency_id = ?';  // SQL query using 'currency_id'
-  
-  db.query(query, [currency_id], (err, results) => {
+  // First, delete the related records in the currency_change_log table
+  const deleteLogQuery = 'DELETE FROM currency_change_log WHERE currency_id = ?';
+  db.query(deleteLogQuery, [currency_id], (err) => {
     if (err) {
-      console.error('Error deleting currency:', err);
-      return res.status(500).json({ error: 'Database error' });
+      console.error('Error deleting currency change log records:', err);
+      return res.status(500).json({ error: 'Database error deleting related records' });
     }
 
-    if (results.affectedRows === 0) {
-      return res.status(404).json({ error: 'Currency not found' });
-    }
+    // Now delete the currency from the Currencies table
+    const query = 'DELETE FROM Currencies WHERE currency_id = ?';  // SQL query using 'currency_id'
+    db.query(query, [currency_id], (err, results) => {
+      if (err) {
+        console.error('Error deleting currency:', err);
+        return res.status(500).json({ error: 'Database error while deleting currency' });
+      }
 
-    res.json({ message: 'Currency deleted successfully' });
+      if (results.affectedRows === 0) {
+        return res.status(404).json({ error: 'Currency not found' });
+      }
+
+      // Successful deletion
+      res.json({ message: 'Currency deleted successfully' });
+    });
   });
 });
-
 
 // Updated balance endpoint in server.js
 app.get('/api/user/balance', (req, res) => {
@@ -536,8 +545,6 @@ app.get('/api/user/orders', (req, res) => {
     res.json(orders);
   });
 });
-
-/*
 // Route to get all currencies
 app.get('/api/admin/currencies', (req, res) => {
   const query = 'SELECT * FROM Currencies';  // Fetch all currencies from the Currencies table
@@ -550,4 +557,115 @@ app.get('/api/admin/currencies', (req, res) => {
 
     res.json(results);  // Send the result as a response
   });
-});*/
+});
+
+// Route to update the exchange rate of a specific currency to PHP
+app.put('/api/admin/currencies/exchange-rate', (req, res) => {
+  const { currency_id, exchange_rate_to_php } = req.body;
+  console.log('Received currency_id:', currency_id);  // Debugging log
+
+  // Validate the inputs
+  if (!currency_id || isNaN(exchange_rate_to_php)) {
+    return res.status(400).json({ error: 'Invalid currency ID or exchange rate' });
+  }
+
+  const query = 'UPDATE Currencies SET exchange_rate_to_php = ? WHERE currency_id = ?';
+
+  db.query(query, [exchange_rate_to_php, currency_id], (err, results) => {
+    if (err) {
+      console.error('Error updating exchange rate:', err);
+      return res.status(500).json({ error: 'Database error while updating exchange rate' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Currency not found' });
+    }
+
+    res.json({ message: 'Exchange rate updated successfully' });
+  });
+});
+
+// Route to update currency details (currency_code, symbol, and exchange rate)
+app.put('/api/admin/currencies/details', (req, res) => {
+  const { currency_id, currency_code, symbol, exchange_rate_to_php } = req.body;
+
+  console.log('Received data for currency update:', req.body);  // Debugging log
+
+  // Validate the inputs
+  if (!currency_id || !currency_code || !symbol || isNaN(exchange_rate_to_php)) {
+    return res.status(400).json({ error: 'Invalid currency details or exchange rate' });
+  }
+
+  const query = `
+    UPDATE Currencies
+    SET currency_code = ?, symbol = ?, exchange_rate_to_php = ?
+    WHERE currency_id = ?
+  `;
+
+  // Update the currency details in the database
+  db.query(query, [currency_code, symbol, exchange_rate_to_php, currency_id], (err, results) => {
+    if (err) {
+      console.error('Error updating currency:', err);
+      return res.status(500).json({ error: 'Database error while updating currency' });
+    }
+
+    if (results.affectedRows === 0) {
+      return res.status(404).json({ error: 'Currency not found' });
+    }
+
+    // Send success response
+    res.json({ message: 'Currency updated successfully' });
+  });
+});
+
+// Route to update user details
+app.put('/api/admin/users/:user_id', (req, res) => {
+    const { user_id } = req.params;  // Get the user_id from the URL parameter
+    const { display_name, email, phone_num, role } = req.body;  // Get the updated data from the request body
+
+    console.log('Received data for user update:', req.body);
+
+    // Validate the required fields
+    if (!display_name || !email || !phone_num || !role) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const query = `
+        UPDATE Users
+        SET display_name = ?, email = ?, phone_num = ?, role = ?
+        WHERE user_id = ?
+    `;
+
+    db.query(query, [display_name, email, phone_num, role, user_id], (err, results) => {
+        if (err) {
+            console.error('Error updating user:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        if (results.affectedRows === 0) {
+            console.log('User not found in the database');
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        console.log('User updated successfully');
+        res.json({ message: 'User updated successfully' });
+    });
+});
+
+// API route for fetching all users
+app.get('/api/admin/users/all', (req, res) => {
+    console.log('Fetching all users...');  // Debugging log
+
+    const query = 'CALL GetAllUsers()';  // Stored procedure to fetch all users
+
+    db.query(query, (err, results) => {
+        if (err) {
+            console.error('Error fetching all users:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+
+        console.log('Fetched users:', results[0]);  // Log the fetched users
+
+        res.json(results[0]);
+    });
+});
