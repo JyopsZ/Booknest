@@ -1276,3 +1276,10 @@ document.getElementById('editUserSaveBtn').addEventListener('click', async () =>
         alert('An error occurred while updating the user');
     }
 });
+
+// Logout function for any page to use
+function logout() {
+  
+  sessionStorage.clear // although session data is not used
+  window.location.href = "index.html";
+}

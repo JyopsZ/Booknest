@@ -10,49 +10,22 @@
 </head>
 <body>
 
- <header>
-  <div class="header-left">
-    <div class="header-title">
-      <a href="index.html">
-        <div class="logo-icon">📚</div>
-        <strong>BookNest</strong>
-      </a>
-    </div>
-    <nav class="nav-buttons">
-      <a href="login.html" class="nav-button">Login</a>
-      <a href="register.html" class="nav-button">Register</a>
-    </nav>
-  </div>
-  <div class="header-right">
-     <div class="staff-portal"
-        onclick="window.location.href='admin.html'"
-        style="cursor: pointer;">
-        <div class="staff-section">
-          <div class="staff-avatar">⚙️</div>
-          <span class="staff-label">Admin Panel</span>
-        </div>
-      </div>
-    <div class="staff-portal" onclick="window.location.href='staff.html'" style="cursor: pointer;">
-      <div class="staff-section">
-        <div class="staff-avatar">🛠️</div>
-        <span class="staff-label">Staff Portal</span>
+  <header>
+    <div class="header-left">
+      <div class="header-title">
+        <a href="index.html">
+          <div class="logo-icon">📚</div>
+          <strong>BookNest</strong>
+        </a>
       </div>
     </div>
-    <div class="profile-currency" onclick="window.location.href='profile.html'" style="cursor: pointer;">
-      <div class="profile-section">
-        <div class="profile-avatar">👤</div>
-        <span class="profile-name">emn</span>
-      </div>
-      <div class="currency-section">
-        <span class="currency-symbols">₱</span>
-        <span class="currency-amount">890.70</span>
-      </div>
-    </div>
-    <button class="cart-button" onclick="window.location.href='cart.html'">
-      🛒 Cart (<span id="cartCount">0</span>)
-    </button>
-  </div>
-</header>
+      
+    <div class="header-right">
+      <nav class="nav-buttons">
+        <a href="#" class="nav-button" onclick="logout()">Logout</a>
+      </nav>
+  </header>
+
   <div class="admin-container">
     <div class="admin-header">
       <div class="admin-title">
