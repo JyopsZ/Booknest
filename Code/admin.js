@@ -883,6 +883,7 @@ async function deleteCurrency(currency_id) {
     if (response.ok) {
       alert('Currency deleted successfully!');
       fetchAndRenderCurrencies();  // Re-fetch and render the updated currencies list
+      location.reload();
     } else {
       alert(result.error || 'Failed to delete currency');
     }
@@ -1124,7 +1125,7 @@ document.getElementById('editCurrencySaveBtn').addEventListener('click', async (
     };
 
     try {
-        const response = await fetch('/api/admin/currencies/exchange-rate', {
+        const response = await fetch('/api/admin/currencies/details', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(updatedCurrency),
@@ -1134,9 +1135,7 @@ document.getElementById('editCurrencySaveBtn').addEventListener('click', async (
 
         if (response.ok) {
             alert('Currency updated successfully!');
-            // Close the modal
             document.getElementById('editCurrencyModal').style.display = 'none';
-            // Optionally, refresh the currency list
             fetchAndRenderCurrencies();  // Re-fetch and render the updated currencies list
         } else {
             alert(result.error || 'Failed to update currency');
