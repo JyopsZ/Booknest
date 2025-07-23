@@ -139,9 +139,7 @@ CREATE TABLE IF NOT EXISTS User_Change_Log (
   field_changed VARCHAR(50) NOT NULL,
   old_value TEXT NOT NULL,
   new_value TEXT NOT NULL,
-  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (user_id)
-    REFERENCES Users (user_id)
+  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -168,9 +166,7 @@ CREATE TABLE IF NOT EXISTS Currency_Change_Log (
   currency_id INT NOT NULL,
   old_exchange_rate DECIMAL(10,4) NOT NULL,
   new_exchange_rate DECIMAL(10,4) NOT NULL,
-  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (currency_id)
-    REFERENCES Currencies (currency_id)
+  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- -----------------------------------------------------
