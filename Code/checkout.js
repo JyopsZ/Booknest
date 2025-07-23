@@ -432,3 +432,18 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 });
+
+function calculateTotal() {
+  const subtotal = checkoutData.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  
+  // Calculate the total (same as subtotal, no tax or shipping)
+  const total = subtotal;
+
+  // Update DOM elements for the subtotal and total
+  document.getElementById('subtotalAmount').textContent = `₱${subtotal.toFixed(2)}`;
+  document.getElementById('totalAmount').textContent = `₱${total.toFixed(2)}`;
+
+  // Log values for debugging
+  console.log("Subtotal:", subtotal);
+  console.log("Total:", total);
+}

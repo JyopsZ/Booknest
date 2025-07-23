@@ -769,3 +769,41 @@ app.post('/api/user/load-money', (req, res) => {
     });
   });
 });
+
+//Route for cart
+app.get('/api/cart', (req, res) => {
+  const userId = req.query.user_id;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID is required' });
+  }
+
+  const query = `
+    SELECT p.title, p.author, oi.quantity, p.price, oi.product_id
+    FROM Order_Items oi
+    JOIN Products p ON oi.product_id = p.product_id
+    JOIN Orders o ON oi.order_id = o.order_id
+    WHERE o.user_id = ? AND o.status = 'In-progress'`;
+
+  db.query(query, [userId], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error while fetching cart' });
+    }
+
+    // Check if results are returned
+    if (results.length === 0) {
+      return res.json([]); // Return an empty array if no items in cart
+    }
+
+    // Map the results to match the frontend structure
+    const cartItems = results.map(item => ({
+      id: item.product_id,
+      title: item.title,
+      author: item.author,
+      price: parseFloat(item.price),
+      quantity: item.quantity
+    }));
+
+    res.json(cartItems); 
+  });
+});
