@@ -276,14 +276,6 @@ app.post('/api/admin/currencies', (req, res) => {
 app.delete('/api/admin/currencies/:currency_id', (req, res) => {
   const { currency_id } = req.params;  // Extract 'currency_id' from the URL parameter
 
-  // First, delete the related records in the currency_change_log table
-  const deleteLogQuery = 'DELETE FROM currency_change_log WHERE currency_id = ?';
-  db.query(deleteLogQuery, [currency_id], (err) => {
-    if (err) {
-      console.error('Error deleting currency change log records:', err);
-      return res.status(500).json({ error: 'Database error deleting related records' });
-    }
-
     // Now delete the currency from the Currencies table
     const query = 'DELETE FROM Currencies WHERE currency_id = ?';  // SQL query using 'currency_id'
     db.query(query, [currency_id], (err, results) => {
@@ -300,7 +292,6 @@ app.delete('/api/admin/currencies/:currency_id', (req, res) => {
       res.json({ message: 'Currency deleted successfully' });
     });
   });
-});
 
 // Updated balance endpoint in server.js
 app.get('/api/user/balance', (req, res) => {
