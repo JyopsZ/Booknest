@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
           // Update the staff name and role
           document.querySelector('.staff-name').textContent = user.display_name;
           document.querySelector('.staff-role').textContent = user.role;
-          document.querySelector('.profile-name').textContent = user.display_name;
       } else {
           console.log('No user data found in localStorage');
       }

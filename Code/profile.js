@@ -1,6 +1,9 @@
 // Profile page JavaScript functionality
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Load user data from localStorage
+    loadUserData();
+    
     // Tab functionality
     initTabs();
     
@@ -9,7 +12,138 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update cart count
     updateCartCount();
+
+    // Fetch all user balances
+    fetchUserBalances();
+
+    fetchOrderHistory();
+
 });
+
+async function fetchUserBalances() {
+    try {
+        const user = JSON.parse(localStorage.getItem('booknest-user'));
+        if (!user || !user.user_id) return;
+
+        const response = await fetch(`/api/user/balances?user_id=${user.user_id}`);
+        const data = await response.json();
+
+        if (data.success) {
+            // Store balances in localStorage
+            const updatedUser = {
+                ...user,
+                balances: data.balances
+            };
+            localStorage.setItem('booknest-user', JSON.stringify(updatedUser));
+
+            // Update UI with all balances
+            updateBalanceDisplays(data.balances);
+        }
+    } catch (error) {
+        console.error('Error fetching balances:', error);
+    }
+}
+
+function updateBalanceDisplays(balances) {
+    if (!balances || balances.length === 0) return;
+
+    // Find primary balance (PHP)
+    const primaryBalance = balances.find(b => b.currency_code === 'PHP') || balances[0];
+    
+    // Update header balance
+    const headerBalance = document.querySelector('.currency-amount');
+    if (headerBalance) {
+        headerBalance.textContent = parseFloat(primaryBalance.balance).toFixed(2);
+    }
+
+    const headerSymbol = document.querySelector('.currency-symbol');
+    if (headerSymbol) {
+        headerSymbol.textContent = primaryBalance.symbol || '₱';
+    }
+
+    // Update wallet stat card
+    const walletStatNumber = document.querySelector('.stat-card .stat-number');
+    if (walletStatNumber) {
+        walletStatNumber.textContent = `${primaryBalance.symbol || '₱'}${parseFloat(primaryBalance.balance).toFixed(2)}`;
+    }
+
+    // Update balance cards in wallet tab
+    updateBalanceCards(balances);
+}
+
+function updateBalanceCards(balances) {
+    const balanceCards = [
+        { selector: '.balance-amount', currency: 'PHP' },
+        { selector: '.balance-amount2', currency: 'EUR' },
+        { selector: '.balance-amount3', currency: 'USD' }
+    ];
+
+    balanceCards.forEach(card => {
+        const balanceElement = document.querySelector(card.selector);
+        if (!balanceElement) return;
+
+        const balanceData = balances.find(b => b.currency_code === card.currency);
+        if (balanceData) {
+            balanceElement.textContent = `${parseFloat(balanceData.balance).toFixed(2)} ${balanceData.currency_code}`;
+            
+            // Also update the currency symbol in the card
+            const cardElement = balanceElement.closest('.balance-card');
+            if (cardElement) {
+                const symbolElement = cardElement.querySelector('.currency-symbol');
+                if (symbolElement) {
+                    symbolElement.textContent = balanceData.symbol;
+                }
+            }
+        } else {
+            balanceElement.textContent = `0.00 ${card.currency}`;
+        }
+    });
+
+    // Update available balance in exchange section
+    const availableBalance = document.querySelector('.available-balance');
+    if (availableBalance) {
+        const phpBalance = balances.find(b => b.currency_code === 'PHP');
+        if (phpBalance) {
+            availableBalance.textContent = `Available: ${parseFloat(phpBalance.balance).toFixed(2)} ${phpBalance.currency_code}`;
+        }
+    }
+}
+
+function loadUserData() {
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user) {
+        console.log('No user data found');
+        return;
+    }
+
+    // Update profile header
+    document.querySelector('.profile-name').textContent = user.display_name;
+    const profileNameLarge = document.querySelector('.profile-name-large');
+    if (profileNameLarge) {
+        profileNameLarge.textContent = user.display_name;
+    }
+
+    const profileEmail = document.querySelector('.profile-email');
+    if (profileEmail && user.email) {
+        profileEmail.textContent = user.email;
+    }
+
+    // Update wallet balance if available
+    if (user.balances) {
+        updateBalanceDisplays(user.balances);
+    } else if (user.balance !== undefined) {
+        // Fallback to single balance if multi-currency not available
+        const headerBalance = document.querySelector('.currency-amount');
+        if (headerBalance) {
+            headerBalance.textContent = parseFloat(user.balance).toFixed(2);
+        }
+
+        const walletStatNumber = document.querySelector('.stat-card .stat-number');
+        if (walletStatNumber) {
+            walletStatNumber.textContent = `${user.currency_symbol || '₱'}${parseFloat(user.balance).toFixed(2)}`;
+        }
+    }
+}
 
 function initTabs() {
     const tabButtons = document.querySelectorAll('.tab-button');
@@ -57,6 +191,18 @@ function initForms() {
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', handleSaveProfile);
     }
+
+    // Pre-fill profile form with user data
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (user) {
+        const displayNameInput = document.getElementById('display-name');
+        const emailInput = document.getElementById('email');
+        const phoneInput = document.getElementById('phone');
+        
+        if (displayNameInput) displayNameInput.value = user.display_name || '';
+        if (emailInput) emailInput.value = user.email || '';
+        if (phoneInput) phoneInput.value = user.phone_num || '';
+    }
 }
 
 function handleLoadMoney() {
@@ -76,8 +222,8 @@ function handleLoadMoney() {
     // Simulate loading money
     const confirmation = confirm(`Load ${amount} ${currency} to your wallet?`);
     if (confirmation) {
-        // Update the wallet balance display
-        updateWalletBalance(currency, amount);
+        // Update the wallet balance in localStorage
+        updateUserBalance(amount);
         
         // Clear the form
         amountInput.value = '';
@@ -89,6 +235,89 @@ function handleLoadMoney() {
         addTransaction('Wallet Load', `+${amount} ${currency}`, new Date());
     }
 }
+
+
+function fetchOrderHistory() {
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+  if (!user || !user.user_id) {
+    console.warn('No user logged in.');
+    return;
+  }
+
+  fetch(`/api/user/orders?user_id=${user.user_id}`)
+    .then(response => response.json())
+    .then(orders => renderOrders(orders))
+    .catch(error => {
+      console.error('Error fetching orders:', error);
+    });
+}
+
+function renderOrders(orders) {
+  const ordersList = document.querySelector('.orders-list');
+  ordersList.innerHTML = '';
+
+  if (!orders.length) {
+    ordersList.innerHTML = '<p>No orders yet.</p>';
+    return;
+  }
+
+  orders.forEach(order => {
+    const orderCard = document.createElement('div');
+    orderCard.classList.add('order-card');
+
+    const date = new Date(order.order_date).toLocaleDateString();
+
+    const itemsHTML = order.items.map(item => `
+      <li>${item.title} × ${item.quantity}</li>
+    `).join('');
+
+    orderCard.innerHTML = `
+      <div class="order-header">
+        <strong>Order #${order.order_id}</strong> — ${date}
+      </div>
+      <ul class="order-items">${itemsHTML}</ul>
+      <div class="order-total">
+        Total: ${order.total_amount} ${order.currency}
+      </div>
+    `;
+
+    ordersList.appendChild(orderCard);
+  });
+}
+
+function updateUserBalance(amount, currencyCode = 'PHP') {
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user) return;
+
+    // Initialize balances if not exists
+    if (!user.balances) {
+        user.balances = {};
+    }
+
+    // Initialize currency balance if not exists
+    if (!user.balances[currencyCode]) {
+        user.balances[currencyCode] = {
+            balance: 0,
+            symbol: currencyCode === 'PHP' ? '₱' : 
+                   currencyCode === 'EUR' ? '€' : '$'
+        };
+    }
+
+    // Update balance
+    user.balances[currencyCode].balance = 
+        (parseFloat(user.balances[currencyCode].balance || 0) + amount).toFixed(2);
+
+    // Update primary balance if PHP
+    if (currencyCode === 'PHP') {
+        user.balance = user.balances.PHP.balance;
+    }
+
+    localStorage.setItem('booknest-user', JSON.stringify(user));
+
+    // Update all balance displays
+    loadUserData();
+}
+
 
 function handleCurrencyExchange() {
     const fromSelect = document.getElementById('from-currency');
@@ -111,8 +340,14 @@ function handleCurrencyExchange() {
         return;
     }
     
-    // Check if user has enough balance (simplified check)
-    const availableBalance = getAvailableBalance(fromCurrency);
+    // Check if user has enough balance
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user || !user.balances || !user.balances[fromCurrency]) {
+        alert('Insufficient balance');
+        return;
+    }
+    
+    const availableBalance = parseFloat(user.balances[fromCurrency].balance || 0);
     if (amount > availableBalance) {
         alert('Insufficient balance');
         return;
@@ -127,9 +362,9 @@ function handleCurrencyExchange() {
     );
     
     if (confirmation) {
-        // Update balances
-        updateWalletBalance(fromCurrency, -amount);
-        updateWalletBalance(toCurrency, parseFloat(convertedAmount));
+        // Update balances in localStorage
+        updateUserBalance(-amount, fromCurrency);
+        updateUserBalance(parseFloat(convertedAmount), toCurrency);
         
         // Clear the form
         amountInput.value = '';
@@ -171,37 +406,30 @@ function handleSaveProfile() {
     // Simulate saving profile
     const confirmation = confirm('Save profile changes?');
     if (confirmation) {
-        // Update profile display
-        const profileNameLarge = document.querySelector('.profile-name-large');
-        const profileEmail = document.querySelector('.profile-email');
-        const headerProfileName = document.querySelector('.profile-name');
+        // Update user in localStorage
+        const user = JSON.parse(localStorage.getItem('booknest-user')) || {};
+        user.display_name = displayName.value.trim();
+        user.email = email.value.trim();
+        user.phone_num = phone.value.trim();
+        localStorage.setItem('booknest-user', JSON.stringify(user));
         
-        if (profileNameLarge) profileNameLarge.textContent = displayName.value;
-        if (profileEmail) profileEmail.textContent = email.value;
-        if (headerProfileName) headerProfileName.textContent = displayName.value.split(' ')[0];
+        // Update profile display
+        loadUserData();
         
         showSuccessMessage('Profile updated successfully!');
     }
 }
 
 function updateAvailableBalance() {
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user) return;
+
     const fromCurrency = document.getElementById('from-currency').value;
-    const availableBalance = getAvailableBalance(fromCurrency);
     const balanceDisplay = document.querySelector('.available-balance');
     
     if (balanceDisplay) {
-        balanceDisplay.textContent = `Available: ${availableBalance.toFixed(2)} ${fromCurrency}`;
+        balanceDisplay.textContent = `Available: ${parseFloat(user.balance || 0).toFixed(2)} ${fromCurrency}`;
     }
-}
-
-function getAvailableBalance(currency) {
-    // Simplified balance lookup
-    const balances = {
-        'PHP': 250.75,
-        'USD': 250.75,
-        'EUR': 180.50,
-    };
-    return balances[currency] || 0;
 }
 
 function getExchangeRate(from, to) {
@@ -213,43 +441,8 @@ function getExchangeRate(from, to) {
         'USD_EUR': 0.92,
         'EUR_PHP': 62.5,
         'EUR_USD': 1.09
-        
     };
     return rates[`${from}_${to}`] || 1;
-}
-
-function updateWalletBalance(currency, amount) {
-    // Find the balance card for the currency and update it
-    const balanceCards = document.querySelectorAll('.balance-card');
-    balanceCards.forEach(card => {
-        const currencyName = card.querySelector('.currency-name');
-        if (currencyName && currencyName.textContent === currency) {
-            const balanceAmount = card.querySelector('.balance-amount');
-            if (balanceAmount) {
-                const currentBalance = parseFloat(balanceAmount.textContent.split(' ')[0]);
-                const newBalance = currentBalance + amount;
-                balanceAmount.textContent = `${newBalance.toFixed(2)} ${currency}`;
-            }
-        }
-    });
-    
-    // Update header currency if it's PHP
-    if (currency === 'PHP') {
-        const headerAmount = document.querySelector('.currency-amount');
-        if (headerAmount) {
-            const currentAmount = parseFloat(headerAmount.textContent);
-            const newAmount = currentAmount + amount;
-            headerAmount.textContent = newAmount.toFixed(2);
-        }
-    }
-    
-    // Update wallet balance stat card
-    const walletStatCard = document.querySelector('.stat-card .stat-number');
-    if (walletStatCard && currency === 'PHP') {
-        const currentBalance = parseFloat(walletStatCard.textContent.replace('₱', ''));
-        const newBalance = currentBalance + amount;
-        walletStatCard.textContent = `₱${newBalance.toFixed(2)}`;
-    }
 }
 
 function addTransaction(type, amount, date) {
@@ -308,8 +501,8 @@ function isValidEmail(email) {
 }
 
 function updateCartCount() {
-    // This would typically come from localStorage or a server
-    const cartCount = localStorage.getItem('cartCount') || '0';
+    const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+    const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
     const cartCountElement = document.getElementById('cartCount');
     if (cartCountElement) {
         cartCountElement.textContent = cartCount;
@@ -318,7 +511,7 @@ function updateCartCount() {
 
 // Logout function for any page to use
 function logout() {
-  
-  sessionStorage.clear // although session data is not used
-  window.location.href = "index.html";
+    localStorage.removeItem('booknest-user');
+    localStorage.removeItem('booknest-cart');
+    window.location.href = "index.html";
 }

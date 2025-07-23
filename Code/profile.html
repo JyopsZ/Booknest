@@ -25,11 +25,11 @@
     <div class="profile-currency" onclick="window.location.href='profile.html'" style="cursor: pointer;">
       <div class="profile-section">
         <div class="profile-avatar">👤</div>
-        <span class="profile-name">emn</span>
+        <span class="profile-name"></span>
       </div>
       <div class="currency-section">
         <span class="currency-symbol">₱</span>
-        <span class="currency-amount">890.70</span>
+        <span class="currency-amount"></span>
       </div>
     </div>
     <button class="cart-button" onclick="window.location.href='cart.html'">
@@ -44,10 +44,6 @@
     <div class="profile-info">
       <h1 class="profile-name-large">John Doe</h1>
       <p class="profile-email">john.doe@example.com</p>
-      <div class="profile-badges">
-        <span class="badge member-since">📅 Member since 2023</span>
-        <span class="badge member-status">🥈 Silver Member</span>
-      </div>
     </div>
     <div class="profile-stats">
       <div class="stat-item">
@@ -73,28 +69,14 @@
         <span class="stat-description">Total Orders</span>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon genre-icon">⭐</div>
-      <div class="stat-content">
-        <span class="stat-number">Fiction</span>
-        <span class="stat-description">Favorite Genre</span>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon value-icon">📈</div>
-      <div class="stat-content">
-        <span class="stat-number">₱39.98</span>
-        <span class="stat-description">Avg. Order Value</span>
-      </div>
-    </div>
   </div>
 
   <!-- Navigation Tabs -->
   <div class="profile-tabs">
     <button class="tab-button" data-tab="wallet">💳 Wallet</button>
     <button class="tab-button active" data-tab="orders">📋 Order History</button>
-    <button class="tab-button" data-tab="transactions">💸 Transactions</button>
-    <button class="tab-button" data-tab="profile-settings">👤 Profile</button>
+    <!-- <button class="tab-button" data-tab="transactions">💸 Transactions</button>
+    <button class="tab-button" data-tab="profile-settings">👤 Profile</button> -->
   </div>
 
   <!-- Tab Content -->
@@ -120,7 +102,7 @@
                 <span class="currency-name">EUR</span>
                 <span class="balance-status">Secondary</span>
               </div>
-              <div class="balance-amount">180.50 EUR</div>
+              <div class="balance-amount2">180.50 EUR</div>
             </div>
             <div class="balance-card">
               <div class="currency-symbol">£</div>
@@ -128,7 +110,7 @@
                 <span class="currency-name">USD</span>
                 <span class="balance-status">Secondary</span>
               </div>
-              <div class="balance-amount">95.25 USD</div>
+              <div class="balance-amount3">95.25 USD</div>
             </div>
           </div>
         </div>
@@ -271,7 +253,7 @@
       </div>
     </div>
 
-    <!-- Transactions Tab -->
+    <!-- Transactions Tab 
     <div id="transactions-tab" class="tab-panel">
       <div class="transactions-content">
         <h3>💸 Transaction History</h3>
@@ -294,9 +276,9 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- Profile Settings Tab -->
+    </div>-->
+    <!--
+   Profile Settings Tab
     <div id="profile-settings-tab" class="tab-panel">
       <div class="profile-settings-content">
         <h3>👤 Profile Settings</h3>
@@ -313,15 +295,11 @@
             <label for="phone">Phone Number</label>
             <input type="tel" id="phone" placeholder="Enter phone number">
           </div>
-          <div class="form-group">
-            <label for="address">Address</label>
-            <textarea id="address" rows="3" placeholder="Enter your address"></textarea>
-          </div>
           <button class="save-profile-btn">💾 Save Changes</button>
         </div>
       </div>
-    </div>
-  </div>
+    </div> -->
+  </div> 
 </div>
 
 <script src="profile.js"></script>

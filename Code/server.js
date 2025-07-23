@@ -97,7 +97,14 @@ app.post('/api/login', (req, res) => {
     return res.status(400).json({ error: 'Email and password are required.' });
   }
 
-  const query = 'SELECT * FROM Users WHERE email = ? LIMIT 1';
+  const query = `
+    SELECT u.*, ub.balance, c.symbol, c.currency_code
+    FROM Users u
+    LEFT JOIN User_Balance ub ON u.user_id = ub.user_id
+    LEFT JOIN Currencies c ON ub.currency_id = c.currency_id
+    WHERE u.email = ? 
+    LIMIT 1
+  `;
 
   db.query(query, [email], (err, results) => {
     if (err) {
@@ -111,15 +118,43 @@ app.post('/api/login', (req, res) => {
 
     const user = results[0];
 
-    // (Optional) Use bcrypt to compare hashed passwords instead of plain text
     if (user.password !== password) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Strip sensitive data before sending
-    delete user.password;
+    // Get all balances for the user
+    const balancesQuery = `
+      SELECT ub.balance, c.currency_code, c.symbol 
+      FROM User_Balance ub
+      JOIN Currencies c ON ub.currency_id = c.currency_id
+      WHERE ub.user_id = ?
+    `;
 
-    res.status(200).json({ message: 'Login successful', user });
+    db.query(balancesQuery, [user.user_id], (err, balanceResults) => {
+      if (err) {
+        console.error('Error fetching balances:', err);
+        return res.status(500).json({ error: 'Database error during login.' });
+      }
+
+      // Find primary balance (PHP)
+      const primaryBalance = balanceResults.find(b => b.currency_code === 'PHP') || balanceResults[0];
+
+      // Format the response
+      const response = {
+        message: 'Login successful',
+        user: {
+          ...user,
+          balance: primaryBalance ? primaryBalance.balance : 0.00,
+          currency_symbol: primaryBalance ? primaryBalance.symbol : '₱',
+          balances: balanceResults
+        }
+      };
+
+      // Strip sensitive data before sending
+      delete response.user.password;
+
+      res.status(200).json(response);
+    });
   });
 });
 
@@ -415,6 +450,92 @@ app.get('/api/user/balance', (req, res) => {
   });
 });
 
+app.get('/api/user/balances', (req, res) => {
+  const { user_id } = req.query;
+  
+  if (!user_id) {
+    return res.status(400).json({ 
+      success: false,
+      message: 'User ID is required'
+    });
+  }
+
+  const query = `
+    SELECT ub.balance, c.currency_code, c.symbol 
+    FROM User_Balance ub
+    JOIN Currencies c ON ub.currency_id = c.currency_id
+    WHERE ub.user_id = ?
+    ORDER BY 
+      CASE WHEN c.currency_code = 'PHP' THEN 0 ELSE 1 END
+  `;
+
+  db.query(query, [user_id], (err, results) => {
+    if (err) {
+      console.error('Error fetching user balances:', err);
+      return res.status(500).json({ 
+        success: false,
+        message: 'Database error'
+      });
+    }
+    
+    res.json({
+      success: true,
+      balances: results
+    });
+  });
+});
+
+app.get('/api/user/orders', (req, res) => {
+  const userId = req.query.user_id;
+
+  const sql = `
+    SELECT 
+      o.order_id,
+      o.total_amount,
+      cu.currency_code,
+      o.order_date,
+      oi.product_id,
+      p.title AS product_title,
+      oi.quantity
+    FROM Orders o
+    JOIN Order_Items oi ON o.order_id = oi.order_id
+    JOIN Products p ON oi.product_id = p.product_id
+    JOIN Currencies cu ON o.currency_id = cu.currency_id
+    WHERE o.user_id = ?
+    ORDER BY o.order_date DESC, o.order_id DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('Error fetching order history:', err);
+      return res.status(500).json({ error: 'Failed to fetch orders.' });
+    }
+
+    // Group items by order_id
+    const ordersMap = {};
+    results.forEach(row => {
+      const orderId = row.order_id;
+      if (!ordersMap[orderId]) {
+        ordersMap[orderId] = {
+          order_id: orderId,
+          order_date: row.order_date,
+          total_amount: row.total_amount,
+          currency: row.currency_code,
+          items: []
+        };
+      }
+
+      ordersMap[orderId].items.push({
+        product_id: row.product_id,
+        title: row.product_title,
+        quantity: row.quantity
+      });
+    });
+
+    const orders = Object.values(ordersMap);
+    res.json(orders);
+  });
+});
 
 /*
 // Route to get all currencies

@@ -2,6 +2,29 @@ let books = [];
 let filteredBooks = [];
 let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
 
+// This is just for the displpay on the top right
+document.addEventListener('DOMContentLoaded', function() {
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+  
+  if (user) {
+    // Update the profile name
+    document.querySelector('.profile-name').textContent = user.display_name;
+    
+    // Update the balance if available
+    if (user.balance !== undefined) {
+      const formattedBalance = parseFloat(user.balance).toFixed(2);
+      document.querySelector('.currency-amount').textContent = formattedBalance;
+    }
+    
+    // Update currency symbol if available
+    if (user.currency_symbol) {
+      document.querySelector('.currency-symbol').textContent = user.currency_symbol;
+    }
+  } else {
+    console.log('No user data found in localStorage');
+  }
+});
+
 // Fetch book data from backend
 async function loadBooksFromServer() {
   try {
@@ -430,8 +453,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (response.ok) {
           alert('Login successful!');
 
-          // Store user info locally
-          localStorage.setItem('booknest-user', JSON.stringify(result.user));
+          // Store user info locally with balance data
+          localStorage.setItem('booknest-user', JSON.stringify({
+            ...result.user,
+            balance: result.user.balance,
+            currency_symbol: result.user.currency_symbol
+          }));
 
           // Role-based redirect
           const userRole = result.user.role;
