@@ -1,3 +1,4 @@
+// profile.js
 // Profile page JavaScript functionality
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -371,70 +372,99 @@ function updateUserBalance(amount, currencyCode = 'PHP') {
 }
 
 
-function handleCurrencyExchange() {
+async function handleCurrencyExchange() {
     const fromSelect = document.getElementById('from-currency');
-    const toSelect = document.getElementById('to-currency');
     const amountInput = document.getElementById('exchange-amount');
+    const exchangeBtn = document.querySelector('.exchange-btn');
     
-    if (!fromSelect || !toSelect || !amountInput) return;
+    if (!fromSelect || !amountInput || !exchangeBtn) return;
     
     const fromCurrency = fromSelect.value;
-    const toCurrency = toSelect.value;
     const amount = parseFloat(amountInput.value);
     
+    // Validate amount
     if (!amount || amount <= 0) {
-        alert('Please enter a valid amount');
+        showErrorMessage('Please enter a valid amount');
         return;
     }
     
-    if (fromCurrency === toCurrency) {
-        alert('Please select different currencies');
-        return;
-    }
-    
-    // Check if user has enough balance
+    // Get user data
     const user = JSON.parse(localStorage.getItem('booknest-user'));
-    if (!user || !user.balances || !user.balances[fromCurrency]) {
-        alert('Insufficient balance');
+    if (!user || !user.user_id) {
+        showErrorMessage('User not logged in');
         return;
     }
     
-    const availableBalance = parseFloat(user.balances[fromCurrency].balance || 0);
-    if (amount > availableBalance) {
-        alert('Insufficient balance');
+    // Check if user has enough balance in the selected currency
+    const userBalance = user.balances?.find(b => b.currency_code === fromCurrency);
+    if (!userBalance || parseFloat(userBalance.balance) < amount) {
+        showErrorMessage(`Insufficient ${fromCurrency} balance`);
         return;
     }
     
-    // Simulate exchange rate (simplified)
-    const exchangeRate = getExchangeRate(fromCurrency, toCurrency);
-    const convertedAmount = (amount * exchangeRate).toFixed(2);
+    // Show loading state
+    const originalBtnText = exchangeBtn.textContent;
+    exchangeBtn.textContent = '⏳ Processing...';
+    exchangeBtn.disabled = true;
     
-    const confirmation = confirm(
-        `Exchange ${amount} ${fromCurrency} to ${convertedAmount} ${toCurrency}?`
-    );
-    
-    if (confirmation) {
-        // Update balances in localStorage
-        updateUserBalance(-amount, fromCurrency);
-        updateUserBalance(parseFloat(convertedAmount), toCurrency);
+    try {
+        // 1. Get current exchange rate from database
+        const exchangeRateResponse = await fetch('/api/admin/currencies');
+        const currencies = await exchangeRateResponse.json();
         
-        // Clear the form
-        amountInput.value = '';
+        const currencyData = currencies.find(c => c.currency_code === fromCurrency);
+        if (!currencyData) {
+            throw new Error('Currency not found');
+        }
         
-        // Show success message
-        showSuccessMessage(
-            `Successfully exchanged ${amount} ${fromCurrency} to ${convertedAmount} ${toCurrency}!`
-        );
+        const exchangeRate = currencyData.exchange_rate_to_php;
+        const convertedAmount = amount * exchangeRate;
         
-        // Add transaction to history
-        addTransaction(
-            'Currency Exchange', 
-            `-${amount} ${fromCurrency} / +${convertedAmount} ${toCurrency}`, 
-            new Date()
-        );
+        // 2. Send exchange request to server
+        const response = await fetch('/api/user/exchange-currency', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: user.user_id,
+                from_currency: fromCurrency,
+                to_currency: 'PHP',
+                amount: amount,
+                exchange_rate: exchangeRate
+            })
+        });
         
-        // Update available balance display
-        updateAvailableBalance();
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update user balances in localStorage
+            const updatedUser = {
+                ...user,
+                balances: data.balances
+            };
+            localStorage.setItem('booknest-user', JSON.stringify(updatedUser));
+            
+            // Update UI with new balances
+            updateBalanceDisplays(data.balances);
+            
+            // Clear the form
+            amountInput.value = '';
+            
+            // Show success message
+            showSuccessMessage(
+                `Successfully exchanged ${amount.toFixed(2)} ${fromCurrency} to ₱${convertedAmount.toFixed(2)}`
+            );
+        } else {
+            showErrorMessage(data.message || 'Currency exchange failed');
+        }
+    } catch (error) {
+        console.error('Currency exchange error:', error);
+        showErrorMessage('Exchange failed. Please try again.');
+    } finally {
+        // Reset button state
+        exchangeBtn.textContent = originalBtnText;
+        exchangeBtn.disabled = false;
     }
 }
 

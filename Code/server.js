@@ -489,14 +489,7 @@ app.get('/api/user/orders', (req, res) => {
   const userId = req.query.user_id;
 
   const sql = `
-    SELECT 
-      o.order_id,
-      o.total_amount,
-      cu.currency_code,
-      o.order_date,
-      oi.product_id,
-      p.title AS product_title,
-      oi.quantity
+    SELECT o.order_id, o.total_amount, cu.currency_code, o.order_date, oi.product_id, p.title AS product_title, oi.quantity
     FROM Orders o
     JOIN Order_Items oi ON o.order_id = oi.order_id
     JOIN Products p ON oi.product_id = p.product_id
@@ -802,4 +795,92 @@ app.post('/api/products', (req, res) => {
             res.status(201).json({ message: 'Product added successfully', productId: results.insertId });
         }
     );
+});
+
+app.post('/api/user/exchange-currency', async (req, res) => {
+    const { user_id, from_currency, to_currency, amount, exchange_rate } = req.body;
+
+    try {
+        // Start transaction
+        await db.promise().beginTransaction();
+
+        // 1. Deduct from source currency balance
+        const deductQuery = `
+            UPDATE User_Balance ub
+            JOIN Currencies c ON ub.currency_id = c.currency_id
+            SET ub.balance = ub.balance - ?
+            WHERE ub.user_id = ? AND c.currency_code = ? AND ub.balance >= ?
+        `;
+        
+        const [deductResult] = await db.promise().query(deductQuery, 
+            [amount, user_id, from_currency, amount]);
+        
+        if (deductResult.affectedRows === 0) {
+            await db.promise().rollback();
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Insufficient balance or currency not found' 
+            });
+        }
+
+        // 2. Get PHP currency_id
+        const [phpCurrency] = await db.promise().query(
+            'SELECT currency_id FROM Currencies WHERE currency_code = ?', ['PHP']);
+        
+        if (phpCurrency.length === 0) {
+            await db.promise().rollback();
+            return res.status(400).json({ 
+                success: false, 
+                message: 'PHP currency not found' 
+            });
+        }
+
+        const phpCurrencyId = phpCurrency[0].currency_id;
+        const convertedAmount = amount * exchange_rate;
+
+        // 3. Check if PHP balance exists
+        const [existingBalance] = await db.promise().query(
+            'SELECT balance FROM User_Balance WHERE user_id = ? AND currency_id = ?',
+            [user_id, phpCurrencyId]
+        );
+
+        if (existingBalance.length > 0) {
+            // Update existing PHP balance by ADDING the converted amount
+            await db.promise().query(
+                'UPDATE User_Balance SET balance = balance + ? WHERE user_id = ? AND currency_id = ?',
+                [convertedAmount, user_id, phpCurrencyId]
+            );
+        } else {
+            // Create new PHP balance with the converted amount
+            await db.promise().query(
+                'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, ?)',
+                [user_id, phpCurrencyId, convertedAmount]
+            );
+        }
+
+        // 4. Commit transaction
+        await db.promise().commit();
+
+        // 5. Return updated balances
+        const [balances] = await db.promise().query(`
+            SELECT ub.balance, c.currency_code, c.symbol 
+            FROM User_Balance ub
+            JOIN Currencies c ON ub.currency_id = c.currency_id
+            WHERE ub.user_id = ?
+        `, [user_id]);
+
+        res.json({
+            success: true,
+            message: 'Currency exchanged successfully',
+            balances: balances
+        });
+
+    } catch (error) {
+        await db.promise().rollback();
+        console.error('Exchange error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Database error during exchange' 
+        });
+    }
 });
