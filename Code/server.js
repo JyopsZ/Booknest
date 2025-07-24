@@ -884,3 +884,57 @@ app.post('/api/user/exchange-currency', async (req, res) => {
         });
     }
 });
+
+// Checkout route
+app.post('/api/checkout', (req, res) => {
+  const { user_id, currency_id, total_amount, exchange_rate, cart } = req.body;
+
+  if (!user_id || !currency_id || !total_amount || !cart || cart.length === 0) {
+    return res.status(400).json({ error: 'Missing checkout details' });
+  }
+
+  db.beginTransaction(err => {
+    if (err) return res.status(500).json({ error: 'Failed to start transaction' });
+
+    db.query('CALL DeductUserBalance(?, ?, ?)', [user_id, currency_id, total_amount], (err) => {
+      if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
+
+      db.query('CALL CreateOrder(?, ?, ?, ?, @order_id)', [user_id, total_amount, currency_id, exchange_rate], (err) => {
+        if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to create order' }));
+
+        db.query('SELECT @order_id AS order_id', (err, results) => {
+          if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to retrieve order ID' }));
+
+          const order_id = results[0].order_id;
+          let remaining = cart.length;
+
+          for (const item of cart) {
+            db.query(
+              'CALL AddOrderItem(?, ?, ?, ?)',
+              [order_id, item.product_id, item.quantity, item.price_per_unit],
+              err => {
+                if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to add item to order' }));
+
+                remaining--;
+                if (remaining === 0) {
+                  db.query(
+                    'CALL LogTransaction(?, ?, ?)',
+                    [order_id, 'Success', total_amount],
+                    err => {
+                      if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to log transaction' }));
+
+                      db.commit(err => {
+                        if (err) return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                        res.json({ success: true, order_id });
+                      });
+                    }
+                  );
+                }
+              }
+            );
+          }
+        });
+      });
+    });
+  });
+});

@@ -362,3 +362,92 @@ END
 
 $$ DELIMITER ;
 
+-- -----------------------------------------------------
+-- Deduct User Balance for Checkout
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE DeductUserBalance(
+  IN p_user_id INT,
+  IN p_currency_id INT,
+  IN p_total_amount DECIMAL(10,2)
+)
+BEGIN
+  UPDATE User_Balance
+  SET balance = balance - p_total_amount
+  WHERE user_id = p_user_id AND currency_id = p_currency_id
+    AND balance >= p_total_amount;
+
+  IF ROW_COUNT() = 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Insufficient balance';
+  END IF;
+END 
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Creat Order for Checkout
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE CreateOrder(
+  IN p_user_id INT,
+  IN p_total_amount DECIMAL(10,2),
+  IN p_currency_id INT,
+  IN p_exchange_rate DECIMAL(10,4),
+  OUT p_order_id INT
+)
+BEGIN
+  INSERT INTO Orders (user_id, total_amount, order_date, currency_id, exchange_rate_onOrder)
+  VALUES (p_user_id, p_total_amount, NOW(), p_currency_id, p_exchange_rate);
+
+  SET p_order_id = LAST_INSERT_ID();
+END 
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Create Order for Checkout
+-- -----------------------------------------------------
+DELIMITER $$
+
+CREATE PROCEDURE AddOrderItem(
+  IN p_order_id INT,
+  IN p_product_id INT,
+  IN p_quantity INT,
+  IN p_price_per_unit DECIMAL(10,2)
+)
+BEGIN
+  INSERT INTO Order_Items (order_id, product_id, quantity, price_per_unit)
+  VALUES (p_order_id, p_product_id, p_quantity, p_price_per_unit);
+
+  UPDATE Products
+  SET stock_quantity = stock_quantity - p_quantity
+  WHERE product_id = p_product_id AND stock_quantity >= p_quantity;
+
+  IF ROW_COUNT() = 0 THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Not enough stock';
+  END IF;
+END 
+
+$$ DELIMITER ;
+
+-- -----------------------------------------------------
+-- Log transactions after checkout
+-- -----------------------------------------------------
+
+DELIMITER $$
+
+CREATE PROCEDURE LogTransaction (
+  IN p_order_id INT,
+  IN p_payment_status VARCHAR(50),
+  IN p_total_amount DECIMAL(10,2)
+)
+BEGIN
+  INSERT INTO transaction_log (order_id, payment_status, total_amount, timestamp)
+  VALUES (p_order_id, p_payment_status, p_total_amount, NOW());
+END
+
+$$ DELIMITER ;

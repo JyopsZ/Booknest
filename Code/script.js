@@ -83,7 +83,7 @@ function generateStars(rating) {
   return stars;
 }
 
-function saveCart() {
+function saveCart(cart) {
   localStorage.setItem('booknest-cart', JSON.stringify(cart));
 }
 
@@ -93,10 +93,6 @@ function updateCartCount() {
   if (cartCountElement) {
     cartCountElement.textContent = cartCount;
   }
-}
-
-function getCartTotal() {
-  return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }
 
 function renderBooks(booksToRender) {
@@ -325,28 +321,30 @@ function addToCart(bookId) {
 }
 
 function updateQuantity(bookId, newQuantity) {
+  let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+
   if (newQuantity <= 0) {
-    removeFromCart(bookId);
-    return;
+    cart = cart.filter(item => item.id !== bookId);
+  } else {
+    const item = cart.find(item => item.id === bookId);
+    if (item) item.quantity = newQuantity;
   }
-  
-  const item = cart.find(item => item.id === bookId);
-  if (item) {
-    item.quantity = newQuantity;
-    saveCart();
-    updateCartCount();
-    renderCart();
-  }
+
+  saveCart(cart);
+  updateCartCount();
+  renderCart();
 }
 
 function removeFromCart(bookId) {
+  let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   cart = cart.filter(item => item.id !== bookId);
-  saveCart();
+  saveCart(cart);
   updateCartCount();
   renderCart();
 }
 
 function proceedToCheckout() {
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   if (cart.length === 0) {
     alert('Your cart is empty!');
     return;
@@ -497,16 +495,6 @@ function logout() {
   window.location.href = "index.html";
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-  const user = JSON.parse(localStorage.getItem('booknest-user'));
-
-  if (user) {
-    const user_id = user.user_id;
-    const cart = await fetchCartItems(user_id);
-    renderCart(cart);
-  }
-});
-
 async function fetchCartItems(userId) {
   try {
     const response = await fetch(`/api/cart?user_id=${userId}`);
@@ -529,7 +517,8 @@ function renderCart() {
   // Retrieve the cart from localStorage
   const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   
-  const cartContent = document.getElementById('cartContent');
+  const cartContainer = document.getElementById('cartContent');
+  if (!cartContainer) return;
   
   if (cart.length === 0) {
     cartContent.innerHTML = `
@@ -606,10 +595,14 @@ function updateCartCount() {
 // Call this function on page load to update the cart count
 document.addEventListener('DOMContentLoaded', function() {
   updateCartCount();
+  if (document.getElementById('cartContent')) {
+    renderCart();
+  }
 });
 
 
 // Function to calculate the total cost of the cart
 function getCartTotal() {
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }
