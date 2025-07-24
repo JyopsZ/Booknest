@@ -105,14 +105,9 @@ function renderOrderSummary() {
 
 function calculateTotal() {
   const subtotal = checkoutData.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const selectedShipping = document.querySelector('input[name="shipping"]:checked');
-  const shippingCost = selectedShipping ? shippingRates[selectedShipping.value] : 99;
-  const tax = Math.round(subtotal * 0.08); // 8% tax
-  const total = subtotal + shippingCost + tax;
+  const total = subtotal;
   
   document.getElementById('subtotalAmount').textContent = `₱${subtotal}`;
-  document.getElementById('shippingAmount').textContent = `₱${shippingCost}`;
-  document.getElementById('taxAmount').textContent = `₱${tax}`;
   document.getElementById('totalAmount').textContent = `₱${total}`;
 }
 
@@ -422,16 +417,27 @@ function calculateTotal() {
   console.log("Total:", total);
 }
 
+// Confirm Order 
 async function confirmOrder() {
+  const checkoutBtn = document.getElementById('checkout-btn');
+  checkoutBtn.disabled = true; // Disable button to prevent multiple clicks
+
   const user = JSON.parse(localStorage.getItem('booknest-user'));
   const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
 
+  // Log user data and cart data for debugging
+  console.log("User data:", user);  // Check if user is loaded correctly
+  console.log("Cart data:", cart);  // Check if cart data is loaded correctly
+
   if (!user || cart.length === 0) {
     alert('User not logged in or cart is empty.');
+    checkoutBtn.disabled = false; // Re-enable the button
     return;
   }
 
+  // Calculate the total
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  console.log("Total Amount:", total);  // Log the total to ensure it's correct
 
   const payload = {
     user_id: user.user_id,
@@ -445,7 +451,7 @@ async function confirmOrder() {
     }))
   };
 
-  console.log('Sending payload to /api/checkout:', payload);
+  console.log('Sending payload to /api/checkout:', payload);  // Log the payload
 
   try {
     const res = await fetch('/api/checkout', {
@@ -468,14 +474,17 @@ async function confirmOrder() {
       alert('Checkout Successful!');
       localStorage.removeItem('booknest-cart');
       window.location.href = 'customer.html';
-
-      
     } else {
+      // Only alert if there is an error
       alert(data.error || 'Checkout failed.');
     }
 
   } catch (err) {
     console.error('Error confirming order:', err);
     alert('Checkout error. Please try again.');
+  } finally {
+    checkoutBtn.disabled = false; // Re-enable the button
   }
 }
+
+

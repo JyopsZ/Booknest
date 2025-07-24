@@ -885,56 +885,121 @@ app.post('/api/user/exchange-currency', async (req, res) => {
     }
 });
 
-// Checkout route
+// Route for Checkout
 app.post('/api/checkout', (req, res) => {
   const { user_id, currency_id, total_amount, exchange_rate, cart } = req.body;
 
+  console.log("Received payload:", req.body);
+
+  // Check for missing checkout details
   if (!user_id || !currency_id || !total_amount || !cart || cart.length === 0) {
+    console.error("Missing checkout details:", req.body);
     return res.status(400).json({ error: 'Missing checkout details' });
   }
 
+  // Start the transaction
   db.beginTransaction(err => {
-    if (err) return res.status(500).json({ error: 'Failed to start transaction' });
+    if (err) {
+      console.error("Failed to start transaction:", err);
+      return res.status(500).json({ error: 'Failed to start transaction' });
+    }
 
-    db.query('CALL DeductUserBalance(?, ?, ?)', [user_id, currency_id, total_amount], (err) => {
-      if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
+    // Step 1: Proceed with order creation first (No balance check yet)
+    console.log("Creating order...");
 
-      db.query('CALL CreateOrder(?, ?, ?, ?, @order_id)', [user_id, total_amount, currency_id, exchange_rate], (err) => {
-        if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to create order' }));
+    // Insert the order into the Orders table
+    db.query(
+      'INSERT INTO Orders (user_id, total_amount, order_date, currency_id, exchange_rate_onOrder) VALUES (?, ?, NOW(), ?, ?)',
+      [user_id, total_amount, currency_id, exchange_rate],
+      (err, results) => {
+        if (err) {
+          console.error("Error creating order:", err);
+          return db.rollback(() => res.status(500).json({ error: 'Failed to create order' }));
+        }
 
-        db.query('SELECT @order_id AS order_id', (err, results) => {
-          if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to retrieve order ID' }));
+        const order_id = results.insertId;
+        console.log("Order ID:", order_id);
 
-          const order_id = results[0].order_id;
-          let remaining = cart.length;
+        // Step 2: Add items to the order
+        let remaining = cart.length;
+        for (const item of cart) {
+          console.log("Adding item to order:", item);
 
-          for (const item of cart) {
-            db.query(
-              'CALL AddOrderItem(?, ?, ?, ?)',
-              [order_id, item.product_id, item.quantity, item.price_per_unit],
-              err => {
-                if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to add item to order' }));
+          db.query(
+            'INSERT INTO order_items (order_id, product_id, quantity, price_per_unit) VALUES (?, ?, ?, ?)',
+            [order_id, item.product_id, item.quantity, item.price_per_unit],
+            (err) => {
+              if (err) {
+                console.error("Error adding item to order:", err);
+                return db.rollback(() => res.status(500).json({ error: 'Failed to add item to order' }));
+              }
 
-                remaining--;
-                if (remaining === 0) {
+              remaining--;
+              if (remaining === 0) {
+                // Step 3: Now check if the user has enough balance (before deducting the balance)
+                console.log("Checking balance...");
+
+                db.query('SELECT balance FROM user_balance WHERE user_id = ? AND currency_id = ?', [user_id, currency_id], (err, results) => {
+                  if (err) {
+                    console.error("Error fetching balance:", err);
+                    return db.rollback(() => res.status(500).json({ error: 'Failed to fetch balance' }));
+                  }
+
+                  if (results.length === 0) {
+                    console.error("No balance found for user.");
+                    return db.rollback(() => res.status(400).json({ error: 'No balance found for user' }));
+                  }
+
+                  const currentBalance = results[0].balance;
+                  console.log("Current balance:", currentBalance);  // Log current balance for debugging
+
+                  if (currentBalance < total_amount) {
+                    console.error("Insufficient balance:", currentBalance);
+                    return db.rollback(() => res.status(400).json({ error: 'Insufficient balance' }));
+                  }
+
+                  // Step 4: Deduct balance after adding all items
+                  console.log("All items added. Deducting balance...");
                   db.query(
-                    'CALL LogTransaction(?, ?, ?)',
-                    [order_id, 'Success', total_amount],
-                    err => {
-                      if (err) return db.rollback(() => res.status(500).json({ error: 'Failed to log transaction' }));
+                    'UPDATE user_balance SET balance = balance - ? WHERE user_id = ? AND currency_id = ?',
+                    [total_amount, user_id, currency_id],
+                    (err) => {
+                      if (err) {
+                        console.error("Error deducting balance:", err);
+                        return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
+                      }
 
-                      db.commit(err => {
-                        if (err) return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
-                        res.json({ success: true, order_id });
-                      });
+                      console.log("Balance deducted successfully. Logging transaction...");
+
+                      // Step 5: Log the transaction in the transaction_log table
+                      db.query(
+                        'INSERT INTO transaction_log (order_id, payment_status, total_amount) VALUES (?, ?, ?)',
+                        [order_id, 'Success', total_amount],
+                        (err) => {
+                          if (err) {
+                            console.error("Error logging transaction:", err);
+                            return db.rollback(() => res.status(500).json({ error: 'Failed to log transaction' }));
+                          }
+
+                          // Step 6: Commit the transaction
+                          db.commit(err => {
+                            if (err) {
+                              console.error("Error committing transaction:", err);
+                              return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                            }
+                            console.log("Transaction committed successfully.");
+                            res.json({ success: true, order_id });
+                          });
+                        }
+                      );
                     }
                   );
-                }
+                });
               }
-            );
-          }
-        });
+            }
+          );
+        }
       });
-    });
   });
 });
+

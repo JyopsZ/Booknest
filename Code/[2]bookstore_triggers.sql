@@ -400,9 +400,11 @@ CREATE PROCEDURE CreateOrder(
 )
 BEGIN
   INSERT INTO Orders (user_id, total_amount, order_date, currency_id, exchange_rate_onOrder)
-  VALUES (p_user_id, p_total_amount, NOW(), p_currency_id, p_exchange_rate);
+  VALUES (p_user_id, 0, NOW(), p_currency_id, p_exchange_rate);  
 
   SET p_order_id = LAST_INSERT_ID();
+
+  SELECT p_order_id AS order_id;
 END 
 
 $$ DELIMITER ;
