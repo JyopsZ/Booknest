@@ -72,6 +72,58 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    document.getElementById('transactionFilter').addEventListener('change', function() {
+    const selectedStatus = this.value;
+    filterTransactions(selectedStatus);
+});
+
+function filterTransactions(statusFilter = 'all') {
+    const transactionItems = document.querySelectorAll('.transaction-item');
+    
+    transactionItems.forEach(item => {
+        const statusElement = item.querySelector('.transaction-status');
+        if (!statusElement) return;
+        
+        const itemStatus = statusElement.textContent.trim();
+        
+        if (statusFilter === 'all' || itemStatus === statusFilter) {
+            item.style.display = ''; // Show the item
+        } else {
+            item.style.display = 'none'; // Hide the item
+        }
+    });
+}
+
+    // ——— Filter functionality ———
+    function loadTransaction() {
+        fetch('/api/transactions')
+            .then(res => res.json())
+            .then(transactions => {
+                const list = document.getElementById('transactionList');
+                list.innerHTML = transactions.map(renderTransaction).join('');
+                
+                // Apply any existing filter after loading
+                const currentFilter = document.getElementById('transactionFilter').value;
+                filterTransactions(currentFilter);
+            })
+            .catch(err => console.error('Failed to load transactions:', err));
+    }
+  
+    function renderTransaction(transaction) {
+        const statusClass = transaction.payment_status.toLowerCase();
+        return `
+            <div class="transaction-item" data-id="${transaction.transaction_id}">
+                <div class="transaction-details">
+                    <h3 class="transaction-order">Order #${transaction.order_id}</h3>
+                    <p class="transaction-status ${statusClass}">${transaction.payment_status}</p>
+                    <p class="transaction-amount">₱${parseFloat(transaction.total_amount).toFixed(2)}</p>
+                    <p class="transaction-user">Customer: ${transaction.display_name || 'Guest'}</p>
+                    <p class="transaction-date">${new Date(transaction.timestamp).toLocaleString()}</p>
+                </div>
+            </div>
+        `;
+    }
+
     // ——— EDIT BOOK MODAL ———
     const editModal          = document.getElementById('editModal');
     const modalCloseBtn      = document.getElementById('modalCloseBtn');
@@ -156,27 +208,72 @@ modalSaveBtn.addEventListener('click', () => {
         });
         addModal.style.display = 'flex';
     });
-document.getElementById('addModalSaveBtn').addEventListener('click', () => {
-  const data = {
-    title: document.getElementById('addTitle').value,
-    author: document.getElementById('addAuthor').value,
-    genre: document.getElementById('addGenre').value,
-    price: parseFloat(document.getElementById('addPrice').value),
-    stock_quantity: parseInt(document.getElementById('addStock').value) || 0,
-    currency_id: 1 // PHP
-  };
+document.getElementById('addModalSaveBtn').addEventListener('click', async () => {
+    // Get form values
+    const title = document.getElementById('addTitle').value.trim();
+    const author = document.getElementById('addAuthor').value.trim();
+    const genre = document.getElementById('addGenre').value;
+    const price = parseFloat(document.getElementById('addPrice').value);
+    const stock = parseInt(document.getElementById('addStock').value) || 0;
 
-  fetch('/api/products', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  })
-    .then(res => res.json())
-    .then(() => {
-      addModal.style.display = 'none';
-      loadInventory(); // Refresh book list
-    })
-    .catch(err => console.error('Add book failed:', err));
+    // Validate required fields
+    if (!title || !author || isNaN(price)) {
+        alert('Please fill in all required fields (Title, Author, Price)');
+        return;
+    }
+
+    // Prepare the book data according to your Products table structure
+    const bookData = {
+        title: title,
+        author: author,
+        price: price,
+        genre: genre || 'General', // Default genre if not selected
+        stock_quantity: stock,
+        description: '', // Can be added to form later
+        isBestseller: 0, // Default to false
+        isNew: 1, // Default to true for new books
+        currency_id: 1 // Default to PHP as per your schema
+    };
+
+    try {
+        // Show loading state
+        const saveBtn = document.getElementById('addModalSaveBtn');
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'Adding...';
+
+        // Send POST request to your API endpoint
+        const response = await fetch('/api/products', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(bookData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to add book');
+        }
+
+        const result = await response.json();
+        
+        // Close modal and refresh the book list
+        addModal.style.display = 'none';
+        loadInventory();
+        
+        // Show success message (you could add a more elegant notification system)
+        alert('Book added successfully!');
+        
+    } catch (error) {
+        console.error('Error adding book:', error);
+        alert(`Error: ${error.message}`);
+    } finally {
+        // Reset button state
+        if (document.getElementById('addModalSaveBtn')) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Add Book';
+        }
+    }
 });
 
     // Adjust stock directly based on user input quantity

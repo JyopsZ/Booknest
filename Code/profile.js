@@ -74,8 +74,8 @@ function updateBalanceDisplays(balances) {
 function updateBalanceCards(balances) {
     const balanceCards = [
         { selector: '.balance-amount', currency: 'PHP' },
-        { selector: '.balance-amount2', currency: 'EUR' },
-        { selector: '.balance-amount3', currency: 'USD' }
+        { selector: '.balance-amount2', currency: 'USD' },
+        { selector: '.balance-amount3', currency: 'EURO' }
     ];
 
     balanceCards.forEach(card => {
@@ -348,7 +348,8 @@ function updateUserBalance(amount, currencyCode = 'PHP') {
     } else {
         // Add new balance
         const symbol = currencyCode === 'PHP' ? '₱' : 
-                      currencyCode === 'EUR' ? '€' : '$';
+                        currencyCode === 'USD' ? '$' :
+                      currencyCode === 'EUR' ? '€' :
         user.balances.push({
             balance: amount.toFixed(2),
             currency_code: currencyCode,

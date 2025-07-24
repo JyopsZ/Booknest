@@ -665,94 +665,63 @@ app.get('/api/admin/users/all', (req, res) => {
 app.post('/api/user/load-money', (req, res) => {
   const { user_id, amount, currency_code } = req.body;
 
-  // Validate required fields
-  if (!user_id || !amount || !currency_code) {
-    return res.status(400).json({ 
-      success: false,
-      message: 'User ID, amount, and currency are required' 
-    });
-  }
+  // Validate inputs...
 
-  // Validate amount is positive
-  if (parseFloat(amount) <= 0) {
-    return res.status(400).json({ 
-      success: false,
-      message: 'Amount must be greater than 0' 
-    });
-  }
-
-  // First, get the currency_id for the given currency_code
+  // First get currency_id
   const getCurrencyQuery = 'SELECT currency_id FROM Currencies WHERE currency_code = ?';
   
   db.query(getCurrencyQuery, [currency_code], (err, currencyResults) => {
     if (err) {
-      console.error('Error fetching currency:', err);
-      return res.status(500).json({ 
-        success: false,
-        message: 'Database error while fetching currency' 
-      });
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
     if (currencyResults.length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid currency code' 
-      });
+      return res.status(400).json({ success: false, message: 'Invalid currency code' });
     }
 
     const currency_id = currencyResults[0].currency_id;
 
-    // Check if user already has a balance record for this currency
-    const checkBalanceQuery = 'SELECT balance FROM User_Balance WHERE user_id = ? AND currency_id = ?';
+    // Check if user has a balance record
+    const checkBalanceQuery = 'SELECT balance_id FROM User_Balance WHERE user_id = ? AND currency_id = ?';
     
     db.query(checkBalanceQuery, [user_id, currency_id], (err, balanceResults) => {
       if (err) {
-        console.error('Error checking user balance:', err);
-        return res.status(500).json({ 
-          success: false,
-          message: 'Database error while checking balance' 
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+
+      let balance_id;
+      
+      if (balanceResults.length > 0) {
+        balance_id = balanceResults[0].balance_id;
+      } else {
+        // Create new balance record if none exists
+        const insertBalanceQuery = 'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, 0)';
+        db.query(insertBalanceQuery, [user_id, currency_id], (err, insertResults) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+          }
+          balance_id = insertResults.insertId;
         });
       }
 
-      let updateQuery;
-      let queryParams;
-
-      if (balanceResults.length > 0) {
-        // Update existing balance
-        const currentBalance = parseFloat(balanceResults[0].balance);
-        const newBalance = currentBalance + parseFloat(amount);
-        
-        updateQuery = 'UPDATE User_Balance SET balance = ? WHERE user_id = ? AND currency_id = ?';
-        queryParams = [newBalance, user_id, currency_id];
-      } else {
-        // Insert new balance record
-        updateQuery = 'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, ?)';
-        queryParams = [user_id, currency_id, parseFloat(amount)];
-      }
-
-      // Execute the balance update/insert
-      db.query(updateQuery, queryParams, (err, updateResults) => {
+      // Insert the load record (trigger will handle balance update)
+      const insertLoadQuery = 'INSERT INTO User_Balance_Load (balance_id, amount_loaded) VALUES (?, ?)';
+      
+      db.query(insertLoadQuery, [balance_id, amount], (err) => {
         if (err) {
-          console.error('Error updating user balance:', err);
-          return res.status(500).json({ 
-            success: false,
-            message: 'Database error while updating balance' 
-          });
+          return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        // Fetch updated balances to return to client
-        const getUpdatedBalancesQuery = `
+        // Get updated balances to return to client
+        const getBalancesQuery = `
           SELECT ub.balance, c.currency_code, c.symbol 
           FROM User_Balance ub
           JOIN Currencies c ON ub.currency_id = c.currency_id
           WHERE ub.user_id = ?
-          ORDER BY 
-            CASE WHEN c.currency_code = 'PHP' THEN 0 ELSE 1 END
         `;
 
-        db.query(getUpdatedBalancesQuery, [user_id], (err, updatedBalances) => {
+        db.query(getBalancesQuery, [user_id], (err, updatedBalances) => {
           if (err) {
-            console.error('Error fetching updated balances:', err);
             return res.status(500).json({ 
               success: false,
               message: 'Balance updated but failed to fetch updated balances' 
@@ -806,4 +775,31 @@ app.get('/api/cart', (req, res) => {
 
     res.json(cartItems); 
   });
+});
+
+// This just inserts the book in the addModalSaveBtn form.
+app.post('/api/products', (req, res) => {
+    const { title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id } = req.body;
+
+    // Validate required fields
+    if (!title || !author || !price) {
+        return res.status(400).json({ error: 'Title, author and price are required' });
+    }
+
+    const query = `
+        INSERT INTO Products 
+        (title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(query, 
+        [title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id], 
+        (err, results) => {
+            if (err) {
+                console.error('Error adding product:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.status(201).json({ message: 'Product added successfully', productId: results.insertId });
+        }
+    );
 });
