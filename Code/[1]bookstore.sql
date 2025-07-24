@@ -188,26 +188,3 @@ CREATE TABLE IF NOT EXISTS Product_Archive (
   created_at TIMESTAMP NOT NULL,
   currency_id INT NOT NULL
 );
-
--- -----------------------------------------------------
--- USERS
--- -----------------------------------------------------
-CREATE USER 'admin_user'@'localhost' IDENTIFIED BY 'password';
-CREATE USER 'staff_user'@'localhost' IDENTIFIED BY 'password';
-CREATE USER 'customer_user'@'localhost' IDENTIFIED BY 'password';
-
--- ADMIN
-GRANT ALL PRIVILEGES ON bookstore.* TO 'admin_user'@'localhost';
-
--- STAFF
-GRANT ALL PRIVILEGES ON bookstore.Products TO 'staff_user'@'localhost';
-GRANT SELECT ON bookstore.Orders TO 'staff_user'@'localhost';
-GRANT SELECT ON bookstore.Order_Items TO 'staff_user'@'localhost';
-GRANT SELECT ON bookstore.Transaction_Log TO 'staff_user'@'localhost';
-
--- CUSTOMER
-GRANT SELECT, INSERT ON bookstore.User_Balance TO 'customer_user'@'localhost';
-GRANT SELECT, INSERT ON bookstore.User_Balance_Load TO 'customer_user'@'localhost';
-GRANT SELECT, INSERT ON bookstore.Orders TO 'customer_user'@'localhost';
-GRANT SELECT, INSERT ON bookstore.Order_Items TO 'customer_user'@'localhost';
-FLUSH PRIVILEGES;
