@@ -1095,9 +1095,10 @@ header {
 
 /* Checkout Container */
 .checkout-container {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 2rem;
+  grid-template-columns: 0.5fr 1fr;
+  gap: 30rem;
+  justify-content: center;
+  align-self: center;
 }
 
 .checkout-main {
@@ -1113,9 +1114,10 @@ header {
   border-radius: 8px;
   border: 1px solid #d2b48c;
   box-shadow: 0 4px 8px rgba(80, 60, 40, 0.1);
-  height: fit-content;
+  padding: 2rem;
   position: sticky;
-  top: 120px;
+  top: 100px;
+  justify-self: center;
 }
 
 /* Checkout Steps */
@@ -1471,6 +1473,7 @@ header {
 /* Order Summary Sidebar */
 .order-summary {
   padding: 1.5rem;
+  justify-self: center;
 }
 
 .order-summary h3 {

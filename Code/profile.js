@@ -205,34 +205,79 @@ function initForms() {
     }
 }
 
-function handleLoadMoney() {
+async function handleLoadMoney() {
     const amountInput = document.getElementById('amount');
     const currencySelect = document.getElementById('currency');
+    const loadMoneyBtn = document.querySelector('.load-money-btn');
     
     if (!amountInput || !currencySelect) return;
     
     const amount = parseFloat(amountInput.value);
     const currency = currencySelect.value;
     
+    // Validate amount
     if (!amount || amount <= 0) {
-        alert('Please enter a valid amount');
+        showErrorMessage('Please enter a valid amount');
         return;
     }
     
-    // Simulate loading money
-    const confirmation = confirm(`Load ${amount} ${currency} to your wallet?`);
-    if (confirmation) {
-        // Update the wallet balance in localStorage
-        updateUserBalance(amount);
+    // Get user data
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user || !user.user_id) {
+        showErrorMessage('User not logged in');
+        return;
+    }
+    
+    // Show loading state
+    const originalBtnText = loadMoneyBtn.textContent;
+    loadMoneyBtn.textContent = '⏳ Loading...';
+    loadMoneyBtn.disabled = true;
+    
+    try {
+        // Send request to server
+        const response = await fetch('/api/user/load-money', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: user.user_id,
+                amount: amount,
+                currency_code: currency
+            })
+        });
         
-        // Clear the form
-        amountInput.value = '';
+        const data = await response.json();
         
-        // Show success message
-        showSuccessMessage(`Successfully loaded ${amount} ${currency} to your wallet!`);
+        if (data.success) {
+            // Update user balances in localStorage
+            const updatedUser = {
+                ...user,
+                balances: data.balances
+            };
+            localStorage.setItem('booknest-user', JSON.stringify(updatedUser));
+            
+            // Update UI with new balances
+            updateBalanceDisplays(data.balances);
+            
+            // Clear the form
+            amountInput.value = '';
+            currencySelect.selectedIndex = 0;
+            
+            // Show success message
+            showSuccessMessage(data.message);
+            
+        } else {
+            showErrorMessage(data.message || 'Failed to load money');
+        }
         
-        // Add transaction to history
-        addTransaction('Wallet Load', `+${amount} ${currency}`, new Date());
+    } catch (error) {
+        console.error('Error loading money:', error);
+        showErrorMessage('Network error. Please try again.');
+    } finally {
+        // Reset button state
+        loadMoneyBtn.textContent = originalBtnText;
+        loadMoneyBtn.disabled = false;
     }
 }
 
@@ -289,33 +334,39 @@ function updateUserBalance(amount, currencyCode = 'PHP') {
     const user = JSON.parse(localStorage.getItem('booknest-user'));
     if (!user) return;
 
-    // Initialize balances if not exists
+    // Initialize balances array if not exists
     if (!user.balances) {
-        user.balances = {};
+        user.balances = [];
     }
 
-    // Initialize currency balance if not exists
-    if (!user.balances[currencyCode]) {
-        user.balances[currencyCode] = {
-            balance: 0,
-            symbol: currencyCode === 'PHP' ? '₱' : 
-                   currencyCode === 'EUR' ? '€' : '$'
-        };
+    // Find existing balance for this currency
+    let existingBalance = user.balances.find(b => b.currency_code === currencyCode);
+    
+    if (existingBalance) {
+        // Update existing balance
+        existingBalance.balance = (parseFloat(existingBalance.balance) + amount).toFixed(2);
+    } else {
+        // Add new balance
+        const symbol = currencyCode === 'PHP' ? '₱' : 
+                      currencyCode === 'EUR' ? '€' : '$';
+        user.balances.push({
+            balance: amount.toFixed(2),
+            currency_code: currencyCode,
+            symbol: symbol
+        });
     }
 
-    // Update balance
-    user.balances[currencyCode].balance = 
-        (parseFloat(user.balances[currencyCode].balance || 0) + amount).toFixed(2);
-
-    // Update primary balance if PHP
-    if (currencyCode === 'PHP') {
-        user.balance = user.balances.PHP.balance;
+    // Update primary balance if PHP (for backward compatibility)
+    const phpBalance = user.balances.find(b => b.currency_code === 'PHP');
+    if (phpBalance) {
+        user.balance = phpBalance.balance;
+        user.currency_symbol = phpBalance.symbol;
     }
 
     localStorage.setItem('booknest-user', JSON.stringify(user));
 
     // Update all balance displays
-    loadUserData();
+    updateBalanceDisplays(user.balances);
 }
 
 

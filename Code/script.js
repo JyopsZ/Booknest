@@ -171,8 +171,7 @@ function renderCart() {
   }
   
   const subtotal = getCartTotal();
-  const tax = Math.round(subtotal * 0.08); // 8% tax
-  const total = subtotal + tax;
+  const total = subtotal;
   
   cartContent.innerHTML = `
     <div class="cart-items">
@@ -202,10 +201,6 @@ function renderCart() {
       <div class="summary-row">
         <span>Subtotal (${cart.reduce((total, item) => total + item.quantity, 0)} items)</span>
         <span>₱${subtotal}</span>
-      </div>
-      <div class="summary-row">
-        <span>Tax</span>
-        <span>₱${tax}</span>
       </div>
       <div class="summary-row total">
         <span>Total</span>
@@ -292,31 +287,41 @@ function updatePriceDisplay() {
   }
 }
 
+// Function to add a book to the cart
 function addToCart(bookId) {
-  const book = books.find(b => b.id === bookId);
-  if (!book || book.stock === 0) return;
-  
+  // Find the book in the books array by bookId
+  const book = books.find(b => b.id === bookId);  // Ensure book is being fetched properly by product_id
+  if (!book || book.stock === 0) return;  // If book is out of stock, do nothing
+
+  // Retrieve the current cart from localStorage or initialize an empty array
+  let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+
+  // Check if the book already exists in the cart
   const existingItem = cart.find(item => item.id === bookId);
-  
+
   if (existingItem) {
+    // If the book is already in the cart, update the quantity
     existingItem.quantity += 1;
   } else {
-    cart.push({ ...book, quantity: 1 });
+    // Otherwise, add a new item to the cart with the product_id and other necessary fields
+    cart.push({
+      id: book.id,  // Ensure correct referencing of the product_id
+      title: book.title,
+      author: book.author,
+      price: book.price,
+      quantity: 1
+    });
   }
-  
-  saveCart();
+
+  // Save the updated cart back to localStorage
+  localStorage.setItem('booknest-cart', JSON.stringify(cart));
+
+  // Update the cart count and re-render the cart
   updateCartCount();
+  renderCart();
   
-  // Show feedback (optional)
-  const button = event.target;
-  const originalText = button.textContent;
-  button.textContent = 'Added!';
-  button.style.backgroundColor = '#4e7c59';
-  
-  setTimeout(() => {
-    button.textContent = originalText;
-    button.style.backgroundColor = '';
-  }, 1000);
+  // Optionally show a success message
+  alert(`${book.title} has been added to your cart!`);
 }
 
 function updateQuantity(bookId, newQuantity) {
@@ -490,4 +495,121 @@ function logout() {
   
   sessionStorage.clear // although session data is not used
   window.location.href = "index.html";
+}
+
+document.addEventListener('DOMContentLoaded', async function() {
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+
+  if (user) {
+    const user_id = user.user_id;
+    const cart = await fetchCartItems(user_id);
+    renderCart(cart);
+  }
+});
+
+async function fetchCartItems(userId) {
+  try {
+    const response = await fetch(`/api/cart?user_id=${userId}`);
+    if (!response.ok) throw new Error('Failed to fetch cart items');
+    
+    const data = await response.json();
+    console.log('Cart data:', data); // Log the cart data to confirm it's being fetched correctly
+    
+    // Return the cart items
+    return data;
+  } catch (error) {
+    console.error('Error fetching cart:', error);
+    return [];  // Return an empty array if there's an error
+  }
+}
+
+// Rendering the cart items
+// Function to render the cart
+function renderCart() {
+  // Retrieve the cart from localStorage
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+  
+  const cartContent = document.getElementById('cartContent');
+  
+  if (cart.length === 0) {
+    cartContent.innerHTML = `
+      <div class="empty-cart">
+        <h3>Your cart is empty</h3>
+        <p>Add some books to get started!</p>
+        <a href="index.html" class="continue-shopping-btn">Continue Shopping</a>
+      </div>
+    `;
+    return;
+  }
+
+  // Calculate the subtotal and total
+  const subtotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+  const total = subtotal;
+
+  // Render cart items
+cartContent.innerHTML = `
+  <div class="cart-items">
+    ${cart.map(item => `
+      <div class="cart-item">
+        <div class="cart-item-image">📚</div>
+        <div class="cart-item-details">
+          <div class="cart-item-title">${item.title}</div>
+          <div class="cart-item-author">by ${item.author}</div>
+        </div>
+        <div class="cart-item-controls">
+          <div class="quantity-controls">
+            <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity - 1})" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+            <span class="quantity-display">${item.quantity}</span>
+            <button class="quantity-btn" onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
+          </div>
+          <div class="cart-item-price">₱${(item.price * item.quantity).toFixed(2)}</div>
+          <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+  
+  <div class="cart-summary">
+    <h3>Order Summary</h3>
+    <div class="summary-row">
+      <span>Subtotal (${cart.reduce((total, item) => total + item.quantity, 0)} items)</span>
+      <span>₱${subtotal.toFixed(2)}</span>
+    </div>
+    <div class="summary-row total">
+      <span>Total</span>
+      <span>₱${total.toFixed(2)}</span>
+    </div>
+    
+    <div class="checkout-actions">
+      <button class="checkout-btn" onclick="proceedToCheckout()">Proceed to Checkout</button>
+      <a href="index.html" class="continue-shopping-link">Continue Shopping</a>
+    </div>
+  </div>
+`;
+}
+
+// Update cart count after adding/removing items
+function updateCartCount() {
+  // Get the cart from localStorage
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+  
+  // Calculate the total number of items in the cart
+  const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
+  
+  // Update the cart count in the header
+  const cartCountElement = document.getElementById('cartCount');
+  if (cartCountElement) {
+    cartCountElement.textContent = cartCount;
+  }
+}
+
+// Call this function on page load to update the cart count
+document.addEventListener('DOMContentLoaded', function() {
+  updateCartCount();
+});
+
+
+// Function to calculate the total cost of the cart
+function getCartTotal() {
+  return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }
