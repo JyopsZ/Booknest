@@ -56,6 +56,55 @@ async function loadBooksFromServer() {
   }
 }
 
+async function fetchUserBalances() {
+  try {
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    if (!user || !user.user_id) return;
+
+    const response = await fetch(`/api/user/balances?user_id=${user.user_id}`);
+    const data = await response.json();
+
+    if (data.success) {
+      // Store balances in localStorage
+      const updatedUser = {
+        ...user,
+        balances: data.balances
+      };
+      localStorage.setItem('booknest-user', JSON.stringify(updatedUser));
+
+      // Update UI with all balances
+      updateBalanceDisplays(data.balances);
+    }
+  } catch (error) {
+    console.error('Error fetching balances:', error);
+  }
+}
+
+function updateBalanceDisplays(balances) {
+  if (!balances || balances.length === 0) return;
+
+  // Find primary balance (PHP)
+  const primaryBalance = balances.find(b => b.currency_code === 'PHP') || balances[0];
+  
+  // Update header balance (works across all pages)
+  const headerBalance = document.querySelector('.currency-amount');
+  if (headerBalance) {
+    headerBalance.textContent = parseFloat(primaryBalance.balance).toFixed(2);
+  }
+
+  const headerSymbol = document.querySelector('.currency-symbol');
+  if (headerSymbol) {
+    headerSymbol.textContent = primaryBalance.symbol || '₱';
+  }
+
+  // Update profile page specific elements if they exist
+  const profileNameLarge = document.querySelector('.profile-name-large');
+  if (profileNameLarge) {
+    const user = JSON.parse(localStorage.getItem('booknest-user'));
+    profileNameLarge.textContent = user.display_name;
+  }
+}
+
 function getStockStatus(stock) {
   if (stock === 0) return 'out-of-stock';
   if (stock <= 3) return 'low-stock';
@@ -83,7 +132,7 @@ function generateStars(rating) {
   return stars;
 }
 
-function saveCart() {
+function saveCart(cart) {
   localStorage.setItem('booknest-cart', JSON.stringify(cart));
 }
 
@@ -93,10 +142,6 @@ function updateCartCount() {
   if (cartCountElement) {
     cartCountElement.textContent = cartCount;
   }
-}
-
-function getCartTotal() {
-  return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }
 
 function renderBooks(booksToRender) {
@@ -325,28 +370,30 @@ function addToCart(bookId) {
 }
 
 function updateQuantity(bookId, newQuantity) {
+  let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+
   if (newQuantity <= 0) {
-    removeFromCart(bookId);
-    return;
+    cart = cart.filter(item => item.id !== bookId);
+  } else {
+    const item = cart.find(item => item.id === bookId);
+    if (item) item.quantity = newQuantity;
   }
-  
-  const item = cart.find(item => item.id === bookId);
-  if (item) {
-    item.quantity = newQuantity;
-    saveCart();
-    updateCartCount();
-    renderCart();
-  }
+
+  saveCart(cart);
+  updateCartCount();
+  renderCart();
 }
 
 function removeFromCart(bookId) {
+  let cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   cart = cart.filter(item => item.id !== bookId);
-  saveCart();
+  saveCart(cart);
   updateCartCount();
   renderCart();
 }
 
 function proceedToCheckout() {
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   if (cart.length === 0) {
     alert('Your cart is empty!');
     return;
@@ -356,6 +403,16 @@ function proceedToCheckout() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', async function () {
+    // Load user data
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+  
+  if (user) {
+    // Update profile name
+    document.querySelector('.profile-name').textContent = user.display_name;
+    
+    // Fetch and update balances
+    await fetchUserBalances();
+  }
   // Update cart count on page load
   updateCartCount();
 
@@ -497,16 +554,6 @@ function logout() {
   window.location.href = "index.html";
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-  const user = JSON.parse(localStorage.getItem('booknest-user'));
-
-  if (user) {
-    const user_id = user.user_id;
-    const cart = await fetchCartItems(user_id);
-    renderCart(cart);
-  }
-});
-
 async function fetchCartItems(userId) {
   try {
     const response = await fetch(`/api/cart?user_id=${userId}`);
@@ -529,7 +576,8 @@ function renderCart() {
   // Retrieve the cart from localStorage
   const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   
-  const cartContent = document.getElementById('cartContent');
+  const cartContainer = document.getElementById('cartContent');
+  if (!cartContainer) return;
   
   if (cart.length === 0) {
     cartContent.innerHTML = `
@@ -606,10 +654,14 @@ function updateCartCount() {
 // Call this function on page load to update the cart count
 document.addEventListener('DOMContentLoaded', function() {
   updateCartCount();
+  if (document.getElementById('cartContent')) {
+    renderCart();
+  }
 });
 
 
 // Function to calculate the total cost of the cart
 function getCartTotal() {
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
   return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
 }

@@ -489,14 +489,7 @@ app.get('/api/user/orders', (req, res) => {
   const userId = req.query.user_id;
 
   const sql = `
-    SELECT 
-      o.order_id,
-      o.total_amount,
-      cu.currency_code,
-      o.order_date,
-      oi.product_id,
-      p.title AS product_title,
-      oi.quantity
+    SELECT o.order_id, o.total_amount, cu.currency_code, o.order_date, oi.product_id, p.title AS product_title, oi.quantity
     FROM Orders o
     JOIN Order_Items oi ON o.order_id = oi.order_id
     JOIN Products p ON oi.product_id = p.product_id
@@ -665,94 +658,63 @@ app.get('/api/admin/users/all', (req, res) => {
 app.post('/api/user/load-money', (req, res) => {
   const { user_id, amount, currency_code } = req.body;
 
-  // Validate required fields
-  if (!user_id || !amount || !currency_code) {
-    return res.status(400).json({ 
-      success: false,
-      message: 'User ID, amount, and currency are required' 
-    });
-  }
+  // Validate inputs...
 
-  // Validate amount is positive
-  if (parseFloat(amount) <= 0) {
-    return res.status(400).json({ 
-      success: false,
-      message: 'Amount must be greater than 0' 
-    });
-  }
-
-  // First, get the currency_id for the given currency_code
+  // First get currency_id
   const getCurrencyQuery = 'SELECT currency_id FROM Currencies WHERE currency_code = ?';
   
   db.query(getCurrencyQuery, [currency_code], (err, currencyResults) => {
     if (err) {
-      console.error('Error fetching currency:', err);
-      return res.status(500).json({ 
-        success: false,
-        message: 'Database error while fetching currency' 
-      });
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
     if (currencyResults.length === 0) {
-      return res.status(400).json({ 
-        success: false,
-        message: 'Invalid currency code' 
-      });
+      return res.status(400).json({ success: false, message: 'Invalid currency code' });
     }
 
     const currency_id = currencyResults[0].currency_id;
 
-    // Check if user already has a balance record for this currency
-    const checkBalanceQuery = 'SELECT balance FROM User_Balance WHERE user_id = ? AND currency_id = ?';
+    // Check if user has a balance record
+    const checkBalanceQuery = 'SELECT balance_id FROM User_Balance WHERE user_id = ? AND currency_id = ?';
     
     db.query(checkBalanceQuery, [user_id, currency_id], (err, balanceResults) => {
       if (err) {
-        console.error('Error checking user balance:', err);
-        return res.status(500).json({ 
-          success: false,
-          message: 'Database error while checking balance' 
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+
+      let balance_id;
+      
+      if (balanceResults.length > 0) {
+        balance_id = balanceResults[0].balance_id;
+      } else {
+        // Create new balance record if none exists
+        const insertBalanceQuery = 'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, 0)';
+        db.query(insertBalanceQuery, [user_id, currency_id], (err, insertResults) => {
+          if (err) {
+            return res.status(500).json({ success: false, message: 'Database error' });
+          }
+          balance_id = insertResults.insertId;
         });
       }
 
-      let updateQuery;
-      let queryParams;
-
-      if (balanceResults.length > 0) {
-        // Update existing balance
-        const currentBalance = parseFloat(balanceResults[0].balance);
-        const newBalance = currentBalance + parseFloat(amount);
-        
-        updateQuery = 'UPDATE User_Balance SET balance = ? WHERE user_id = ? AND currency_id = ?';
-        queryParams = [newBalance, user_id, currency_id];
-      } else {
-        // Insert new balance record
-        updateQuery = 'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, ?)';
-        queryParams = [user_id, currency_id, parseFloat(amount)];
-      }
-
-      // Execute the balance update/insert
-      db.query(updateQuery, queryParams, (err, updateResults) => {
+      // Insert the load record (trigger will handle balance update)
+      const insertLoadQuery = 'INSERT INTO User_Balance_Load (balance_id, amount_loaded) VALUES (?, ?)';
+      
+      db.query(insertLoadQuery, [balance_id, amount], (err) => {
         if (err) {
-          console.error('Error updating user balance:', err);
-          return res.status(500).json({ 
-            success: false,
-            message: 'Database error while updating balance' 
-          });
+          return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        // Fetch updated balances to return to client
-        const getUpdatedBalancesQuery = `
+        // Get updated balances to return to client
+        const getBalancesQuery = `
           SELECT ub.balance, c.currency_code, c.symbol 
           FROM User_Balance ub
           JOIN Currencies c ON ub.currency_id = c.currency_id
           WHERE ub.user_id = ?
-          ORDER BY 
-            CASE WHEN c.currency_code = 'PHP' THEN 0 ELSE 1 END
         `;
 
-        db.query(getUpdatedBalancesQuery, [user_id], (err, updatedBalances) => {
+        db.query(getBalancesQuery, [user_id], (err, updatedBalances) => {
           if (err) {
-            console.error('Error fetching updated balances:', err);
             return res.status(500).json({ 
               success: false,
               message: 'Balance updated but failed to fetch updated balances' 
@@ -807,3 +769,237 @@ app.get('/api/cart', (req, res) => {
     res.json(cartItems); 
   });
 });
+
+// This just inserts the book in the addModalSaveBtn form.
+app.post('/api/products', (req, res) => {
+    const { title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id } = req.body;
+
+    // Validate required fields
+    if (!title || !author || !price) {
+        return res.status(400).json({ error: 'Title, author and price are required' });
+    }
+
+    const query = `
+        INSERT INTO Products 
+        (title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(query, 
+        [title, author, price, genre, stock_quantity, description, isBestseller, isNew, currency_id], 
+        (err, results) => {
+            if (err) {
+                console.error('Error adding product:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            res.status(201).json({ message: 'Product added successfully', productId: results.insertId });
+        }
+    );
+});
+
+app.post('/api/user/exchange-currency', async (req, res) => {
+    const { user_id, from_currency, to_currency, amount, exchange_rate } = req.body;
+
+    try {
+        // Start transaction
+        await db.promise().beginTransaction();
+
+        // 1. Deduct from source currency balance
+        const deductQuery = `
+            UPDATE User_Balance ub
+            JOIN Currencies c ON ub.currency_id = c.currency_id
+            SET ub.balance = ub.balance - ?
+            WHERE ub.user_id = ? AND c.currency_code = ? AND ub.balance >= ?
+        `;
+        
+        const [deductResult] = await db.promise().query(deductQuery, 
+            [amount, user_id, from_currency, amount]);
+        
+        if (deductResult.affectedRows === 0) {
+            await db.promise().rollback();
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Insufficient balance or currency not found' 
+            });
+        }
+
+        // 2. Get PHP currency_id
+        const [phpCurrency] = await db.promise().query(
+            'SELECT currency_id FROM Currencies WHERE currency_code = ?', ['PHP']);
+        
+        if (phpCurrency.length === 0) {
+            await db.promise().rollback();
+            return res.status(400).json({ 
+                success: false, 
+                message: 'PHP currency not found' 
+            });
+        }
+
+        const phpCurrencyId = phpCurrency[0].currency_id;
+        const convertedAmount = amount * exchange_rate;
+
+        // 3. Check if PHP balance exists
+        const [existingBalance] = await db.promise().query(
+            'SELECT balance FROM User_Balance WHERE user_id = ? AND currency_id = ?',
+            [user_id, phpCurrencyId]
+        );
+
+        if (existingBalance.length > 0) {
+            // Update existing PHP balance by ADDING the converted amount
+            await db.promise().query(
+                'UPDATE User_Balance SET balance = balance + ? WHERE user_id = ? AND currency_id = ?',
+                [convertedAmount, user_id, phpCurrencyId]
+            );
+        } else {
+            // Create new PHP balance with the converted amount
+            await db.promise().query(
+                'INSERT INTO User_Balance (user_id, currency_id, balance) VALUES (?, ?, ?)',
+                [user_id, phpCurrencyId, convertedAmount]
+            );
+        }
+
+        // 4. Commit transaction
+        await db.promise().commit();
+
+        // 5. Return updated balances
+        const [balances] = await db.promise().query(`
+            SELECT ub.balance, c.currency_code, c.symbol 
+            FROM User_Balance ub
+            JOIN Currencies c ON ub.currency_id = c.currency_id
+            WHERE ub.user_id = ?
+        `, [user_id]);
+
+        res.json({
+            success: true,
+            message: 'Currency exchanged successfully',
+            balances: balances
+        });
+
+    } catch (error) {
+        await db.promise().rollback();
+        console.error('Exchange error:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Database error during exchange' 
+        });
+    }
+});
+
+// Route for Checkout
+app.post('/api/checkout', (req, res) => {
+  const { user_id, currency_id, total_amount, exchange_rate, cart } = req.body;
+
+  console.log("Received payload:", req.body);
+
+  // Check for missing checkout details
+  if (!user_id || !currency_id || !total_amount || !cart || cart.length === 0) {
+    console.error("Missing checkout details:", req.body);
+    return res.status(400).json({ error: 'Missing checkout details' });
+  }
+
+  // Start the transaction
+  db.beginTransaction(err => {
+    if (err) {
+      console.error("Failed to start transaction:", err);
+      return res.status(500).json({ error: 'Failed to start transaction' });
+    }
+
+    // Step 1: Proceed with order creation first (No balance check yet)
+    console.log("Creating order...");
+
+    // Insert the order into the Orders table
+    db.query(
+      'INSERT INTO Orders (user_id, total_amount, order_date, currency_id, exchange_rate_onOrder) VALUES (?, ?, NOW(), ?, ?)',
+      [user_id, total_amount, currency_id, exchange_rate],
+      (err, results) => {
+        if (err) {
+          console.error("Error creating order:", err);
+          return db.rollback(() => res.status(500).json({ error: 'Failed to create order' }));
+        }
+
+        const order_id = results.insertId;
+        console.log("Order ID:", order_id);
+
+        // Step 2: Add items to the order
+        let remaining = cart.length;
+        for (const item of cart) {
+          console.log("Adding item to order:", item);
+
+          db.query(
+            'INSERT INTO order_items (order_id, product_id, quantity, price_per_unit) VALUES (?, ?, ?, ?)',
+            [order_id, item.product_id, item.quantity, item.price_per_unit],
+            (err) => {
+              if (err) {
+                console.error("Error adding item to order:", err);
+                return db.rollback(() => res.status(500).json({ error: 'Failed to add item to order' }));
+              }
+
+              remaining--;
+              if (remaining === 0) {
+                // Step 3: Now check if the user has enough balance (before deducting the balance)
+                console.log("Checking balance...");
+
+                db.query('SELECT balance FROM user_balance WHERE user_id = ? AND currency_id = ?', [user_id, currency_id], (err, results) => {
+                  if (err) {
+                    console.error("Error fetching balance:", err);
+                    return db.rollback(() => res.status(500).json({ error: 'Failed to fetch balance' }));
+                  }
+
+                  if (results.length === 0) {
+                    console.error("No balance found for user.");
+                    return db.rollback(() => res.status(400).json({ error: 'No balance found for user' }));
+                  }
+
+                  const currentBalance = results[0].balance;
+                  console.log("Current balance:", currentBalance);  // Log current balance for debugging
+
+                  if (currentBalance < total_amount) {
+                    console.error("Insufficient balance:", currentBalance);
+                    return db.rollback(() => res.status(400).json({ error: 'Insufficient balance' }));
+                  }
+
+                  // Step 4: Deduct balance after adding all items
+                  console.log("All items added. Deducting balance...");
+                  db.query(
+                    'UPDATE user_balance SET balance = balance - ? WHERE user_id = ? AND currency_id = ?',
+                    [total_amount, user_id, currency_id],
+                    (err) => {
+                      if (err) {
+                        console.error("Error deducting balance:", err);
+                        return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
+                      }
+
+                      console.log("Balance deducted successfully. Logging transaction...");
+
+                      // Step 5: Log the transaction in the transaction_log table
+                      db.query(
+                        'INSERT INTO transaction_log (order_id, payment_status, total_amount) VALUES (?, ?, ?)',
+                        [order_id, 'Success', total_amount],
+                        (err) => {
+                          if (err) {
+                            console.error("Error logging transaction:", err);
+                            return db.rollback(() => res.status(500).json({ error: 'Failed to log transaction' }));
+                          }
+
+                          // Step 6: Commit the transaction
+                          db.commit(err => {
+                            if (err) {
+                              console.error("Error committing transaction:", err);
+                              return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                            }
+                            console.log("Transaction committed successfully.");
+                            res.json({ success: true, order_id });
+                          });
+                        }
+                      );
+                    }
+                  );
+                });
+              }
+            }
+          );
+        }
+      });
+  });
+});
+

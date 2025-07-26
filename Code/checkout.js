@@ -36,25 +36,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupEventListeners() {
-  // Shipping method change
-  document.querySelectorAll('input[name="shipping"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      updateShippingCost();
-      renderOrderSummary();
+  const shippingInputs = document.querySelectorAll('input[name="shipping"]');
+  if (shippingInputs.length > 0) {
+    shippingInputs.forEach(radio => {
+      radio.addEventListener('change', function () {
+        updateShippingCost();
+        renderOrderSummary();
+      });
     });
-  });
-  
-  // Payment method change
-  document.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      togglePaymentDetails();
-    });
-  });
-  
-  // Remove real-time validation - only validate on next button click
-  // Clear any existing error styling on input
-  document.getElementById('shippingForm').addEventListener('input', clearFieldErrors);
-  document.getElementById('paymentForm').addEventListener('input', clearFieldErrors);
+  }
+
+  const confirmBtn = document.querySelector('.confirm-btn');
+  if (confirmBtn) {
+    confirmBtn.addEventListener('click', confirmOrder);
+  }
 }
 
 function updateShippingCost() {
@@ -110,14 +105,9 @@ function renderOrderSummary() {
 
 function calculateTotal() {
   const subtotal = checkoutData.cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  const selectedShipping = document.querySelector('input[name="shipping"]:checked');
-  const shippingCost = selectedShipping ? shippingRates[selectedShipping.value] : 99;
-  const tax = Math.round(subtotal * 0.08); // 8% tax
-  const total = subtotal + shippingCost + tax;
+  const total = subtotal;
   
   document.getElementById('subtotalAmount').textContent = `₱${subtotal}`;
-  document.getElementById('shippingAmount').textContent = `₱${shippingCost}`;
-  document.getElementById('taxAmount').textContent = `₱${tax}`;
   document.getElementById('totalAmount').textContent = `₱${total}`;
 }
 
@@ -379,35 +369,14 @@ function processOrder() {
 }
 
 function updateNavigationButtons() {
-  const backBtn = document.getElementById('backBtn');
-  const nextBtn = document.getElementById('nextBtn');
-  
-  // Handle back button visibility
-  if (currentStep === 'shipping') {
-    backBtn.classList.add('hidden');
-  } else {
-    backBtn.classList.remove('hidden');
-  }
-  
-  // Handle next button text and functionality
-  if (currentStep === 'confirmation') {
-    nextBtn.style.display = 'none';
-  } else {
-    nextBtn.style.display = 'block';
-    
-    switch (currentStep) {
-      case 'shipping':
-        nextBtn.textContent = 'Continue to Payment →';
-        break;
-      case 'payment':
-        nextBtn.textContent = 'Review Order →';
-        break;
-      case 'review':
-        nextBtn.textContent = 'Place Order →';
-        break;
-    }
+  const currentStepElement = document.querySelector(`.progress-step[data-step="${currentStep}"]`);
+  if (currentStepElement) {
+    // Make sure no other steps are marked active
+    document.querySelectorAll('.progress-step').forEach(step => step.classList.remove('active'));
+    currentStepElement.classList.add('active');
   }
 }
+
 
 // Format card number input
 document.addEventListener('DOMContentLoaded', function() {
@@ -447,3 +416,75 @@ function calculateTotal() {
   console.log("Subtotal:", subtotal);
   console.log("Total:", total);
 }
+
+// Confirm Order 
+async function confirmOrder() {
+  const checkoutBtn = document.getElementById('checkout-btn');
+  checkoutBtn.disabled = true; // Disable button to prevent multiple clicks
+
+  const user = JSON.parse(localStorage.getItem('booknest-user'));
+  const cart = JSON.parse(localStorage.getItem('booknest-cart')) || [];
+
+  // Log user data and cart data for debugging
+  console.log("User data:", user);  // Check if user is loaded correctly
+  console.log("Cart data:", cart);  // Check if cart data is loaded correctly
+
+  if (!user || cart.length === 0) {
+    alert('User not logged in or cart is empty.');
+    checkoutBtn.disabled = false; // Re-enable the button
+    return;
+  }
+
+  // Calculate the total
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  console.log("Total Amount:", total);  // Log the total to ensure it's correct
+
+  const payload = {
+    user_id: user.user_id,
+    currency_id: 1, // PHP
+    exchange_rate: 1.0,
+    total_amount: total,
+    cart: cart.map(item => ({
+      product_id: item.id,
+      quantity: item.quantity,
+      price_per_unit: item.price
+    }))
+  };
+
+  console.log('Sending payload to /api/checkout:', payload);  // Log the payload
+
+  try {
+    const res = await fetch('/api/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    let data;
+
+    try {
+      data = await res.json(); // Try parsing response as JSON
+    } catch (e) {
+      const text = await res.text(); // Fallback to raw response
+      console.error('Server returned non-JSON:', text);
+      throw new Error('Invalid JSON response: ' + text);
+    }
+
+    if (res.ok && data.success) {
+      alert('Checkout Successful!');
+      localStorage.removeItem('booknest-cart');
+      window.location.href = 'customer.html';
+    } else {
+      // Only alert if there is an error
+      alert(data.error || 'Checkout failed.');
+    }
+
+  } catch (err) {
+    console.error('Error confirming order:', err);
+    alert('Checkout error. Please try again.');
+  } finally {
+    checkoutBtn.disabled = false; // Re-enable the button
+  }
+}
+
+
