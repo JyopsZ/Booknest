@@ -61,8 +61,6 @@ VALUES
   (@order_id_2, 1, 1, 699.00);    -- Midnight Library
 
 COMMIT;
-
-
         
 -- USER BALANCE DATA
 INSERT INTO User_Balance (user_id, currency_id)

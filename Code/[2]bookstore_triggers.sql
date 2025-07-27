@@ -56,8 +56,8 @@ DELIMITER $$
         SET total_amount = total
         WHERE order_id = NEW.order_id;
         
-        INSERT INTO Transaction_Log (order_id, total_amount)
-        VALUES (NEW.order_id, total)
+        INSERT INTO Transaction_Log (order_id, total_amount, payment_status)
+        VALUES (NEW.order_id, total, 'Successful')
         ON DUPLICATE KEY UPDATE total_amount = VALUES(total_amount), -- Handles cases when order is updated, when there is more than 1 Order_Items
 								timestamp = CURRENT_TIMESTAMP;
 	END;
