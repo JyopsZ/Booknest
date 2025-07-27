@@ -1128,6 +1128,38 @@
   font-size: 0.9rem;
 }
 
+.modal-body input:focus,
+.modal-body select:focus {
+  outline: none;
+  border-color: #8b5e3c;
+  box-shadow: 0 0 0 2px rgba(139, 94, 60, 0.1);
+}
+
+/* Textarea styling for description fields */
+.modal-body textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #a1887f;
+  border-radius: 6px;
+  background-color: #fffdf6;
+  font-family: 'Georgia', serif;
+  color: #3e2c1c;
+  font-size: 0.9rem;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-body textarea:focus {
+  outline: none;
+  border-color: #8b5e3c;
+  box-shadow: 0 0 0 2px rgba(139, 94, 60, 0.1);
+}
+
+.modal-body textarea::placeholder {
+  color: #a1887f;
+  font-style: italic;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
