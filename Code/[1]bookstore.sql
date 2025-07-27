@@ -122,7 +122,7 @@ FOREIGN KEY (balance_id)
 CREATE TABLE IF NOT EXISTS Transaction_Log (
   transaction_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   order_id INT NOT NULL,
-  payment_status ENUM('Successful', 'Pending', 'Failed') DEFAULT 'Pending',
+  payment_status ENUM('Successful', 'Failed') DEFAULT 'Successful',
   total_amount DECIMAL(10,2) NOT NULL,
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 FOREIGN KEY (order_id)
