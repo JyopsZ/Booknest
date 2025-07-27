@@ -192,13 +192,13 @@ CREATE TABLE IF NOT EXISTS Product_Archive (
 -- -----------------------------------------------------
 -- USERS
 -- -----------------------------------------------------
-CREATE USER 'admin'@'localhost' IDENTIFIED BY 'password';
-CREATE USER 'staff'@'localhost' IDENTIFIED BY 'password';
-CREATE USER 'customer'@'localhost' IDENTIFIED BY 'password';
+-- CREATE USER 'admin'@'localhost' IDENTIFIED BY 'password';
+-- CREATE USER 'staff'@'localhost' IDENTIFIED BY 'password';
+-- CREATE USER 'customer'@'localhost' IDENTIFIED BY 'password';
 
 -- ADMIN
 GRANT ALL PRIVILEGES ON bookstore.* TO 'admin'@'localhost';
-SELECT user, host FROM mysql.user;
+-- SELECT user, host FROM mysql.user;
 -- STAFF
 GRANT ALL PRIVILEGES ON bookstore.Products TO 'staff'@'localhost';
 GRANT SELECT ON bookstore.Orders TO 'staff'@'localhost';
