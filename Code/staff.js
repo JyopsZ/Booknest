@@ -60,23 +60,48 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // ——— Search functionality ———
-    const searchInput = document.querySelector('.inventory-search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', e => {
-            const term = e.target.value.toLowerCase();
-            document.querySelectorAll('.inventory-item').forEach(item => {
-                const title = item.querySelector('.item-title').textContent.toLowerCase();
-                item.style.display = title.includes(term) ? '' : 'none';
-            });
+const inventorySearchInput = document.querySelector('.inventory-search-input');
+if (inventorySearchInput) {
+    inventorySearchInput.addEventListener('input', e => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll('.inventory-item').forEach(item => {
+            const title = item.querySelector('.item-title').textContent.toLowerCase();
+            const author = item.querySelector('.item-author').textContent.toLowerCase();
+            const genre = item.querySelector('.item-genre').textContent.toLowerCase();
+            const price = item.querySelector('.item-price').textContent.toLowerCase();
+            const stock = item.querySelector('.item-stock-value').textContent.toLowerCase();
+            
+            // Check if search term matches any of the book fields
+            const matches = title.includes(searchTerm) || 
+                          author.includes(searchTerm) || 
+                          genre.includes(searchTerm) ||
+                          price.includes(searchTerm) ||
+                          stock.includes(searchTerm);
+            
+            item.style.display = matches ? '' : 'none';
         });
-    }
-
-    document.getElementById('transactionFilter').addEventListener('change', function() {
-    const selectedStatus = this.value;
-    filterTransactions(selectedStatus);
-});
-
+    });
+}
+const transactionSearchInput = document.querySelector('#transactionSearch');
+if (transactionSearchInput) {
+    transactionSearchInput.addEventListener('input', e => {
+        const searchTerm = e.target.value.toLowerCase();
+        document.querySelectorAll('.transaction-item').forEach(item => {
+            const orderNumber = item.querySelector('.transaction-order').textContent.toLowerCase();
+            const customerName = item.querySelector('.transaction-user').textContent.toLowerCase();
+            const transactionDate = item.querySelector('.transaction-date').textContent.toLowerCase();
+            const amount = item.querySelector('.transaction-amount').textContent.toLowerCase();
+            
+            // Check if search term matches any of the transaction fields
+            const matches = orderNumber.includes(searchTerm) || 
+                          customerName.includes(searchTerm) || 
+                          transactionDate.includes(searchTerm) ||
+                          amount.includes(searchTerm);
+            
+            item.style.display = matches ? '' : 'none';
+        });
+    });
+}
 function filterTransactions(statusFilter = 'all') {
     const transactionItems = document.querySelectorAll('.transaction-item');
     

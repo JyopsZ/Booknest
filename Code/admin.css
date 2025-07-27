@@ -293,12 +293,13 @@
 .user-item {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.5rem;
   padding: 1.5rem;
   background-color: #fef6e4;
   border: 1px solid #d7ccc8;
   border-radius: 8px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-height: 100px;
 }
 
 .user-item:hover {
@@ -361,6 +362,11 @@
   color: #fff8e1;
 }
 
+.user-badge.admin {
+  background-color: #d32f2f;
+  color: #fff8e1;
+}
+
 .status-badge {
   padding: 0.2rem 0.5rem;
   border-radius: 12px;
@@ -393,27 +399,37 @@
   font-family: 'Georgia', serif;
 }
 
+/* FIXED: User Stats Numbers Display */
 .user-stats {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  min-width: 120px;
+  gap: 0.5rem;
+  min-width: 140px;
+  align-items: flex-end;
 }
 
 .user-stat {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-end;
   font-size: 0.8rem;
   font-family: 'Georgia', serif;
+  margin-bottom: 0.25rem;
 }
 
 .user-stat .stat-label {
   color: #5e412f;
+  font-size: 0.75rem;
+  margin-bottom: 0.1rem;
+  white-space: nowrap;
 }
 
 .user-stat .stat-value {
   color: #4e342e;
   font-weight: bold;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .user-actions {
@@ -686,6 +702,117 @@
   font-size: 0.9rem;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background-color: #fff8e1;
+  border: 1px solid #d2b48c;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(80,60,40,0.2);
+  width: 90%;
+  max-width: 500px;
+  padding: 1.5rem;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: #4e342e;
+  font-family: 'Georgia', serif;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #4e342e;
+  cursor: pointer;
+}
+
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-body label {
+  font-family: 'Georgia', serif;
+  color: #4e342e;
+  font-size: 0.9rem;
+}
+
+.modal-body input,
+.modal-body select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #a1887f;
+  border-radius: 6px;
+  background-color: #fffdf6;
+  font-family: 'Georgia', serif;
+  color: #3e2c1c;
+  font-size: 0.9rem;
+}
+
+.modal-body input:focus,
+.modal-body select:focus {
+  outline: none;
+  border-color: #8b5e3c;
+  box-shadow: 0 0 0 2px rgba(139, 94, 60, 0.1);
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.modal-cancel {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Georgia', serif;
+  font-size: 0.85rem;
+  background-color: #ede0d4;
+  color: #4e342e;
+  cursor: pointer;
+}
+
+.modal-cancel:hover {
+  background-color: #d2b48c;
+  color: #fff8e1;
+}
+
+.modal-save {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-family: 'Georgia', serif;
+  font-size: 0.85rem;
+  background-color: #4e7c59;
+  color: #fff8e1;
+  cursor: pointer;
+}
+
+.modal-save:hover {
+  background-color: #3e6749;
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .currency-layout {
@@ -759,6 +886,14 @@
     width: 100%;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
+    min-width: auto;
+  }
+  
+  .user-stat {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
   }
   
   .user-actions {
@@ -794,10 +929,23 @@
   .user-stats {
     flex-direction: column;
     gap: 0.5rem;
+    align-items: stretch;
   }
   
   .user-stat {
+    flex-direction: row;
     justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #ede0d4;
+  }
+  
+  .user-stat:last-child {
+    border-bottom: none;
+  }
+  
+  .user-stat .stat-label {
+    margin-bottom: 0;
   }
   
   .action-buttons {
@@ -809,100 +957,3 @@
     font-size: 0.8rem;
   }
 }
-
-/* ——— Modal Styles ——— */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0,0,0,0.5);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background-color: #fff8e1;
-  border: 1px solid #d2b48c;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(80,60,40,0.2);
-  width: 90%;
-  max-width: 500px;
-  padding: 1.5rem;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-.modal-header h3 {
-  margin: 0;
-  color: #4e342e;
-  font-family: 'Georgia', serif;
-}
-.modal-close {
-  background: transparent;
-  border: none;
-  font-size: 1.25rem;
-  color: #4e342e;
-  cursor: pointer;
-}
-
-.modal-body {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.modal-body label {
-  font-family: 'Georgia', serif;
-  color: #4e342e;
-  font-size: 0.9rem;
-}
-.modal-body input,
-.modal-body select {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #a1887f;
-  border-radius: 6px;
-  background-color: #fffdf6;
-  font-family: 'Georgia', serif;
-  color: #3e2c1c;
-  font-size: 0.9rem;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.modal-cancel {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-family: 'Georgia', serif;
-  font-size: 0.85rem;
-  background-color: #ede0d4;
-  color: #4e342e;
-  cursor: pointer;
-}
-.modal-cancel:hover {
-  background-color: #d2b48c;
-  color: #fff8e1;
-}
-.modal-save {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  font-family: 'Georgia', serif;
-  font-size: 0.85rem;
-  background-color: #4e7c59;
-  color: #fff8e1;
-  cursor: pointer;
-}
-.modal-save:hover {
-  background-color: #3e6749;
-}
-
