@@ -969,16 +969,16 @@ app.post('/api/checkout', (req, res) => {
                         return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
                       }
 
-                      console.log("Balance deducted successfully. Logging transaction...");
+                      console.log("Balance deducted successfully. Updating transaction log...");
 
-                      // Step 5: Log the transaction in the transaction_log table
+                      // Step 5: Update the transaction log in the transaction_log table
                       db.query(
-                        'INSERT INTO transaction_log (order_id, payment_status, total_amount) VALUES (?, ?, ?)',
-                        [order_id, 'Success', total_amount],
+                        'UPDATE transaction_log SET payment_status = ?, total_amount = ? WHERE order_id = ?',
+                        ['Successful', total_amount, order_id], // We now update based on the order_id
                         (err) => {
                           if (err) {
-                            console.error("Error logging transaction:", err);
-                            return db.rollback(() => res.status(500).json({ error: 'Failed to log transaction' }));
+                            console.error("Error updating transaction log:", err);
+                            return db.rollback(() => res.status(500).json({ error: 'Failed to update transaction log' }));
                           }
 
                           // Step 6: Commit the transaction
@@ -1002,4 +1002,5 @@ app.post('/api/checkout', (req, res) => {
       });
   });
 });
+
 
