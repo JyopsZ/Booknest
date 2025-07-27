@@ -28,17 +28,41 @@ VALUES ('The Midnight Library', 'Matt Haig', 699.00, 'Fiction', 15, 4.5, 'A dazz
         ('1984', 'George Orwell', 399.00, 'Dystopian', 10, 4.7, 'A chilling dystopian novel about totalitarian control and the power of truth.', 0, 0),
         ('The Lord of the Rings', 'J.R.R. Tolkien', 899.00, 'Fantasy', 5, 4.9, 'The epic fantasy trilogy that defined a genre and captured millions of hearts.', 1, 0);
 
--- ORDER DATA
-INSERT INTO Orders (user_id, currency_id) -- TODO: save exchange rate from currencies table to exchange_rate_onOrder
-VALUES (3, 1), -- 1 midnight library & 1 atomic habits
-		(3, 2); -- 1 midnight library in dollar (0.018)			-- total_amount is set to 0, but updated upon each order item selected via trigger
-																-- exchange rate is taken from trigger before insert based on currency_id
+-- ORDER & ORDER_ITEMS DATA
+-- total_amount is set to 0, but updated upon each order item selected via trigger
+-- exchange rate is taken from trigger before insert based on currency_id
 
--- ORDER ITEM DATA
+-- First order
+START TRANSACTION;
+
+INSERT INTO Orders (user_id, currency_id)
+VALUES (3, 1);  -- Midnight Library + Atomic Habits 
+
+SET @order_id_1 := LAST_INSERT_ID();
+
 INSERT INTO Order_Items (order_id, product_id, quantity, price_per_unit)
-VALUES (1, 1, 1, 699.00),
-		(1, 2, 1, 549.00),
-        (2, 1, 1, 12.58);
+VALUES 
+  (@order_id_1, 1, 1, 699.00),   -- Midnight Library
+  (@order_id_1, 2, 1, 549.00);   -- Atomic Habits
+
+COMMIT;
+
+START TRANSACTION;
+
+-- Insert second order (USD)
+INSERT INTO Orders (user_id, currency_id)
+VALUES (3, 1);  -- Midnight Library 
+
+SET @order_id_2 := LAST_INSERT_ID();
+
+-- Insert order item for the second order
+INSERT INTO Order_Items (order_id, product_id, quantity, price_per_unit)
+VALUES 
+  (@order_id_2, 1, 1, 699.00);    -- Midnight Library
+
+COMMIT;
+
+
         
 -- USER BALANCE DATA
 INSERT INTO User_Balance (user_id, currency_id)
