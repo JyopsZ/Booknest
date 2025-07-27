@@ -934,73 +934,106 @@ app.post('/api/checkout', (req, res) => {
                 return db.rollback(() => res.status(500).json({ error: 'Failed to add item to order' }));
               }
 
-              remaining--;
-              if (remaining === 0) {
-                // Step 3: Now check if the user has enough balance (before deducting the balance)
-                console.log("Checking balance...");
-
-                db.query('SELECT balance FROM user_balance WHERE user_id = ? AND currency_id = ?', [user_id, currency_id], (err, results) => {
+              // Deduct stock from Products table
+              db.query(
+                'UPDATE Products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND stock_quantity >= ?',
+                [item.quantity, item.product_id, item.quantity],
+                (err, result) => {
                   if (err) {
-                    console.error("Error fetching balance:", err);
-                    return db.rollback(() => res.status(500).json({ error: 'Failed to fetch balance' }));
+                    console.error("Error updating product stock:", err);
+                    return db.rollback(() => res.status(500).json({ error: 'Failed to update stock' }));
                   }
 
-                  if (results.length === 0) {
-                    console.error("No balance found for user.");
-                    return db.rollback(() => res.status(400).json({ error: 'No balance found for user' }));
+                  // Check if stock was actually updated (e.g., to avoid negative stock)
+                  if (result.affectedRows === 0) {
+                    console.error("Insufficient product stock for product_id:", item.product_id);
+                    return db.rollback(() => res.status(400).json({ error: `Insufficient stock for product ID ${item.product_id}` }));
                   }
 
-                  const currentBalance = results[0].balance;
-                  console.log("Current balance:", currentBalance);  // Log current balance for debugging
-
-                  if (currentBalance < total_amount) {
-                    console.error("Insufficient balance:", currentBalance);
-                    return db.rollback(() => res.status(400).json({ error: 'Insufficient balance' }));
+                  // If stock runs out, mark product as 'Out-of-stock'
+                  if (result.affectedRows > 0 && item.quantity >= result.affectedRows) {
+                    db.query(
+                      'UPDATE Products SET status = "Out-of-stock" WHERE product_id = ? AND stock_quantity = 0',
+                      [item.product_id],
+                      (err) => {
+                        if (err) {
+                          console.error("Error updating product status to out-of-stock:", err);
+                          return db.rollback(() => res.status(500).json({ error: 'Failed to update product status' }));
+                        }
+                      }
+                    );
                   }
 
-                  // Step 4: Deduct balance after adding all items
-                  console.log("All items added. Deducting balance...");
-                  db.query(
-                    'UPDATE user_balance SET balance = balance - ? WHERE user_id = ? AND currency_id = ?',
-                    [total_amount, user_id, currency_id],
-                    (err) => {
+                  remaining--;
+                  if (remaining === 0) {
+                    // Step 3: Now check if the user has enough balance (before deducting the balance)
+                    console.log("Checking balance...");
+
+                    db.query('SELECT balance FROM user_balance WHERE user_id = ? AND currency_id = ?', [user_id, currency_id], (err, results) => {
                       if (err) {
-                        console.error("Error deducting balance:", err);
-                        return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
+                        console.error("Error fetching balance:", err);
+                        return db.rollback(() => res.status(500).json({ error: 'Failed to fetch balance' }));
                       }
 
-                      console.log("Balance deducted successfully. Updating transaction log...");
+                      if (results.length === 0) {
+                        console.error("No balance found for user.");
+                        return db.rollback(() => res.status(400).json({ error: 'No balance found for user' }));
+                      }
 
-                      // Step 5: Update the transaction log in the transaction_log table
+                      const currentBalance = results[0].balance;
+                      console.log("Current balance:", currentBalance);  // Log current balance for debugging
+
+                      if (currentBalance < total_amount) {
+                        console.error("Insufficient balance:", currentBalance);
+                        return db.rollback(() => res.status(400).json({ error: 'Insufficient balance' }));
+                      }
+
+                      // Step 4: Deduct balance after adding all items
+                      console.log("All items added. Deducting balance...");
                       db.query(
-                        'UPDATE transaction_log SET payment_status = ?, total_amount = ? WHERE order_id = ?',
-                        ['Successful', total_amount, order_id], // We now update based on the order_id
+                        'UPDATE user_balance SET balance = balance - ? WHERE user_id = ? AND currency_id = ?',
+                        [total_amount, user_id, currency_id],
                         (err) => {
                           if (err) {
-                            console.error("Error updating transaction log:", err);
-                            return db.rollback(() => res.status(500).json({ error: 'Failed to update transaction log' }));
+                            console.error("Error deducting balance:", err);
+                            return db.rollback(() => res.status(500).json({ error: 'Failed to deduct balance' }));
                           }
 
-                          // Step 6: Commit the transaction
-                          db.commit(err => {
-                            if (err) {
-                              console.error("Error committing transaction:", err);
-                              return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                          console.log("Balance deducted successfully. Updating transaction log...");
+
+                          // Step 5: Update the transaction log in the transaction_log table
+                          db.query(
+                            'UPDATE transaction_log SET payment_status = ?, total_amount = ? WHERE order_id = ?',
+                            ['Successful', total_amount, order_id], // We now update based on the order_id
+                            (err) => {
+                              if (err) {
+                                console.error("Error updating transaction log:", err);
+                                return db.rollback(() => res.status(500).json({ error: 'Failed to update transaction log' }));
+                              }
+
+                              // Step 6: Commit the transaction
+                              db.commit(err => {
+                                if (err) {
+                                  console.error("Error committing transaction:", err);
+                                  return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                                }
+                                console.log("Transaction committed successfully.");
+                                res.json({ success: true, order_id });
+                              });
                             }
-                            console.log("Transaction committed successfully.");
-                            res.json({ success: true, order_id });
-                          });
+                          );
                         }
                       );
-                    }
-                  );
-                });
-              }
+                    });
+                  }
+                }
+              );
             }
           );
         }
       });
   });
 });
+
 
 
