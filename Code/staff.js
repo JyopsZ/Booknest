@@ -329,29 +329,50 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
         });
     });
 
-    //This renders the books
-        function renderBookItem(book) {
+    // Enhanced renderBookItem function
+function renderBookItem(book) {
+    const stockStatus = book.stock_quantity <= 0 ? 'out-of-stock' : 
+                       book.stock_quantity <= 5 ? 'low-stock' : 'in-stock';
+    
+    const stockStatusText = book.stock_quantity <= 0 ? 'Out of Stock' : 
+                           book.stock_quantity <= 5 ? 'Low Stock' : 'In Stock';
+    
     return `
         <div class="inventory-item" data-id="${book.product_id}">
-        <div class="item-details">
-            <h3 class="item-title">${book.title}</h3>
-            <p class="item-author">by ${book.author}</p>
-            <p class="item-genre">${book.genre}</p>
+            <div class="item-image">
+                <div class="book-cover">📚</div>
             </div>
+            
+            <div class="item-details">
+                <h3 class="item-title">${book.title}</h3>
+                <p class="item-author">by ${book.author}</p>
+                <span class="item-genre">${book.genre}</span>
+            </div>
+            
             <div class="item-price-section">
-            <p class="item-price">₱${parseFloat(book.price).toFixed(2)}</p>
-            <p class="item-stock ${book.stock_quantity <= 5 ? 'low-stock' : ''}">Stock: <span class="item-stock-value">${book.stock_quantity}</span></p>
+                <span class="price-label">Price</span>
+                <p class="item-price">₱${parseFloat(book.price).toFixed(2)}</p>
             </div>
-        <div class="item-actions">
+            
+            <div class="item-stock-section">
+                <span class="stock-label">Stock</span>
+                <p class="item-stock ${book.stock_quantity <= 5 ? 'low-stock' : ''}">
+                    <span class="item-stock-value">${book.stock_quantity}</span>
+                </p>
+                <span class="status-indicator ${stockStatus}">${stockStatusText}</span>
+            </div>
+            
             <div class="stock-controls">
-            <input type="number" class="stock-qty-input" value="${book.stock_quantity}" /></input>
-            <button class="save-stock-btn">💾 Save</button>
+                <input type="number" class="stock-qty-input" value="${book.stock_quantity}" min="0" />
+                <button class="save-stock-btn">💾 Save</button>
             </div>
-            <button class="item-edit-btn">✏️ Edit</button>
-        </div>
+            
+            <div class="item-actions">
+                <button class="item-edit-btn">✏️ Edit</button>
+            </div>
         </div>
     `;
-    }
+}
     
     function loadInventory() {
     fetch('/api/products')
@@ -365,20 +386,30 @@ document.querySelectorAll('.stock-btn.minus').forEach(btn => {
         .catch(err => console.error('Failed to load inventory:', err));
     }
 
-            function renderTransaction(transaction) {
+    // NEW VERSION of Render
+           function renderTransaction(transaction) {
+    const statusClass = transaction.payment_status.toLowerCase();
+    const amountClass = parseFloat(transaction.total_amount) >= 0 ? 'positive' : 'negative';
+    const formattedDate = new Date(transaction.timestamp).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
     return `
         <div class="transaction-item" data-id="${transaction.transaction_id}">
-        <div class="transaction-details">
-            <h3 class="transaction-order">${transaction.order_id}</h3>
-            <p class="transaction-status">${transaction.payment_status}</p>
-            <p class="transaction-amount positive">${transaction.total_amount}</p>
-            <p class="transaction>${transaction.user_id}</p>
-            <p class="transaction-name>${transaction.display_name}</p>
+            <div class="transaction-details">
+                <h3 class="transaction-order">Order #${transaction.order_id}</h3>
+                <p class="transaction-user">Customer: ${transaction.display_name || 'Guest'}</p>
+                <p class="transaction-date">${formattedDate}</p>
             </div>
-        </div>
+            <div class="transaction-status ${statusClass}">${transaction.payment_status}</div>
+            <div class="transaction-amount ${amountClass}">₱${parseFloat(transaction.total_amount).toFixed(2)}</div>
         </div>
     `;
-    }
+}
 
         function loadTransaction() {
     fetch('/api/transactions')
