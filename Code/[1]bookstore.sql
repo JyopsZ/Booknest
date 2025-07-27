@@ -152,9 +152,7 @@ CREATE TABLE IF NOT EXISTS Product_Change_Log (
   field_changed VARCHAR(50) NOT NULL,
   old_value TEXT NOT NULL,
   new_value TEXT NOT NULL,
-  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-FOREIGN KEY (product_id)
-    REFERENCES Products (product_id)
+  changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
