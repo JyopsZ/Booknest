@@ -983,8 +983,29 @@ app.post('/api/checkout', (req, res) => {
                       const currentBalance = results[0].balance;
                       console.log("Current balance:", currentBalance);  // Log current balance for debugging
 
+                      // balance check
                       if (currentBalance < total_amount) {
                         console.error("Insufficient balance:", currentBalance);
+
+                        // Update transaction log status to 'Failed' due to insufficient balance
+                        db.query(
+                          'UPDATE transaction_log SET payment_status = ?, total_amount = ? WHERE order_id = ?',
+                          ['Failed', total_amount, order_id],  
+                          (err) => {
+                            if (err) {
+                              console.error("Error updating transaction log:", err);
+                            }
+                          }
+                        );
+
+                        // Commit transaction with the failed status before rollback
+                        db.commit((err) => {
+                          if (err) {
+                            console.error("Error committing transaction:", err);
+                            return db.rollback(() => res.status(500).json({ error: 'Commit failed' }));
+                          }
+                        });
+
                         return db.rollback(() => res.status(400).json({ error: 'Insufficient balance' }));
                       }
 
@@ -1034,6 +1055,9 @@ app.post('/api/checkout', (req, res) => {
       });
   });
 });
+
+
+
 
 
 
