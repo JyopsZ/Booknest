@@ -145,7 +145,6 @@ function filterTransactions(statusFilter = 'all') {
             document.getElementById('modalGenre').value         = inv.querySelector('.item-genre').textContent;
             const priceTxt = inv.querySelector('.item-price').textContent.replace(/[^0-9.]/g, '');
             document.getElementById('modalPrice').value         = priceTxt;
-            document.getElementById('modalOriginalPrice').value = priceTxt;
             openEditModal();
         });
     });
@@ -201,7 +200,7 @@ modalSaveBtn.addEventListener('click', () => {
     });
     window.addEventListener('click', e => { if (e.target === addModal) addModal.style.display = 'none'; });
     document.querySelector('.add-new-book-btn').addEventListener('click', () => {
-        ['Title','Author','Price','OriginalPrice','Stock'].forEach(field => {
+        ['Title','Author','Price','Stock'].forEach(field => {
             const el = document.getElementById('add' + field);
             if (el.tagName === 'SELECT') el.selectedIndex = 0;
             else el.value = '';
@@ -499,7 +498,7 @@ function attachStockHandlers() {
         document.getElementById('modalGenre').value         = inv.querySelector('.item-genre').textContent;
         const priceTxt = inv.querySelector('.item-price').textContent.replace(/[^0-9.]/g, '');
         document.getElementById('modalPrice').value         = priceTxt;
-        document.getElementById('modalOriginalPrice').value = priceTxt;
+        
 
         openEditModal();
         });
