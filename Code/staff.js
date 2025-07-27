@@ -145,6 +145,8 @@ function filterTransactions(statusFilter = 'all') {
             document.getElementById('modalGenre').value         = inv.querySelector('.item-genre').textContent;
             const priceTxt = inv.querySelector('.item-price').textContent.replace(/[^0-9.]/g, '');
             document.getElementById('modalPrice').value         = priceTxt;
+            // Get description from data attribute or leave empty if not available
+            document.getElementById('modalDescription').value   = inv.getAttribute('data-description') || '';
             openEditModal();
         });
     });
@@ -157,6 +159,7 @@ modalSaveBtn.addEventListener('click', () => {
         author: document.getElementById('modalAuthor').value,
         genre: document.getElementById('modalGenre').value,
         price: parseFloat(document.getElementById('modalPrice').value),
+        description: document.getElementById('modalDescription').value,
         stock_quantity: parseInt(currentEditingItem.querySelector('.item-stock-value').textContent, 10)
     };
 
@@ -180,9 +183,8 @@ modalSaveBtn.addEventListener('click', () => {
         currentEditingItem.querySelector('.item-author').textContent = `by ${updatedData.author}`;
         currentEditingItem.querySelector('.item-genre').textContent = updatedData.genre;
         currentEditingItem.querySelector('.item-price').textContent = `₱${updatedData.price.toFixed(2)}`;
-        
-        // The stock quantity will be updated via the separate stock controls
-        // The trigger will automatically handle the status change
+        // Store description in data attribute for future edits
+        currentEditingItem.setAttribute('data-description', updatedData.description);
         
         closeEditModal();
         loadInventory(); // Refresh the list to ensure consistency
@@ -200,7 +202,7 @@ modalSaveBtn.addEventListener('click', () => {
     });
     window.addEventListener('click', e => { if (e.target === addModal) addModal.style.display = 'none'; });
     document.querySelector('.add-new-book-btn').addEventListener('click', () => {
-        ['Title','Author','Price','Stock'].forEach(field => {
+        ['Title','Author','Price','Stock','Description'].forEach(field => {
             const el = document.getElementById('add' + field);
             if (el.tagName === 'SELECT') el.selectedIndex = 0;
             else el.value = '';
@@ -213,6 +215,7 @@ document.getElementById('addModalSaveBtn').addEventListener('click', async () =>
     const author = document.getElementById('addAuthor').value.trim();
     const genre = document.getElementById('addGenre').value;
     const price = parseFloat(document.getElementById('addPrice').value);
+    const description = document.getElementById('addDescription').value.trim();
     const stock = parseInt(document.getElementById('addStock').value) || 0;
 
     // Validate required fields
@@ -227,8 +230,8 @@ document.getElementById('addModalSaveBtn').addEventListener('click', async () =>
         author: author,
         price: price,
         genre: genre || 'General', // Default genre if not selected
+        description: description || '', // Include description
         stock_quantity: stock,
-        description: '', // Can be added to form later
         isBestseller: 0, // Default to false
         isNew: 1, // Default to true for new books
         currency_id: 1 // Default to PHP as per your schema
@@ -268,7 +271,8 @@ document.getElementById('addModalSaveBtn').addEventListener('click', async () =>
         alert(`Error: ${error.message}`);
     } finally {
         // Reset button state
-        if (document.getElementById('addModalSaveBtn')) {
+        const saveBtn = document.getElementById('addModalSaveBtn');
+        if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.textContent = 'Add Book';
         }
@@ -337,7 +341,7 @@ function renderBookItem(book) {
                            book.stock_quantity <= 5 ? 'Low Stock' : 'In Stock';
     
     return `
-        <div class="inventory-item" data-id="${book.product_id}">
+        <div class="inventory-item" data-id="${book.product_id}" data-description="${book.description || ''}">
             <div class="item-image">
                 <div class="book-cover">📚</div>
             </div>
@@ -498,7 +502,8 @@ function attachStockHandlers() {
         document.getElementById('modalGenre').value         = inv.querySelector('.item-genre').textContent;
         const priceTxt = inv.querySelector('.item-price').textContent.replace(/[^0-9.]/g, '');
         document.getElementById('modalPrice').value         = priceTxt;
-        
+        // Get description from data attribute
+        document.getElementById('modalDescription').value   = inv.getAttribute('data-description') || '';
 
         openEditModal();
         });
@@ -509,13 +514,12 @@ function attachStockHandlers() {
     loadTransaction();
     attachEditButtons(); 
     // ——— Initialize tooltips & logs ———
-    initializeTooltips();
     console.log('BookNest Staff Portal initialized.');
 });
 
 // Logout function for any page to use
 function logout() {
-  
-  sessionStorage.clear // although session data is not used
+  localStorage.removeItem('booknest-user');
+  sessionStorage.clear(); // although session data is not used
   window.location.href = "index.html";
 }
